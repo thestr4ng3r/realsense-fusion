@@ -4,9 +4,12 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/visualization/cloud_viewer.h>
+#include <pcl/filters/passthrough.h>
+
+#include <stdio.h>
 
 
-pcl::PointCloud<pcl::PointXYZ>::Ptr points_to_pcl(const rs2::points& points);
+void points_to_pcl(const rs2::points& points, pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud);
 
 int main()
 {
@@ -18,7 +21,11 @@ int main()
 		rs2::pipeline pipe;
 		pipe.start();
 
+		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+		pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+
 		pcl::visualization::CloudViewer cloud_viewer("Cloud Viewer");
+
 		while(!cloud_viewer.wasStopped())
 		{
 			auto frames = pipe.wait_for_frames();
@@ -31,9 +38,15 @@ int main()
 				color = frames.get_infrared_frame();
 			pc.map_to(color);*/
 
-			auto pcl_points = points_to_pcl(points);
+			points_to_pcl(points, cloud);
 
-			cloud_viewer.showCloud(pcl_points);
+			pcl::PassThrough<pcl::PointXYZ> z_filter;
+			z_filter.setInputCloud(cloud);
+			z_filter.setFilterFieldName("z");
+			z_filter.setFilterLimits(-1.5f, 0.0f);
+			z_filter.filter(*filtered_cloud);
+
+			cloud_viewer.showCloud(filtered_cloud);
 		}
 
 		return 0;
@@ -46,10 +59,8 @@ int main()
 }
 
 
-pcl::PointCloud<pcl::PointXYZ>::Ptr points_to_pcl(const rs2::points& points)
+void points_to_pcl(const rs2::points& points, pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud)
 {
-	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
-
 	auto sp = points.get_profile().as<rs2::video_stream_profile>();
 	cloud->width = sp.width();
 	cloud->height = sp.height();
@@ -58,11 +69,9 @@ pcl::PointCloud<pcl::PointXYZ>::Ptr points_to_pcl(const rs2::points& points)
 	auto ptr = points.get_vertices();
 	for (auto& p : cloud->points)
 	{
-		p.x = -ptr->x;
+		p.x = ptr->x;
 		p.y = -ptr->y;
-		p.z = ptr->z;
+		p.z = -ptr->z;
 		ptr++;
 	}
-
-	return cloud;
 }
