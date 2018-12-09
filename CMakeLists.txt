@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.2)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
+message("CMAKE_TOOLCHAIN_FILE: \"${CMAKE_TOOLCHAIN_FILE}\"")
+
 set(SOURCE_FILES src/main.cpp)
 
 find_package(realsense2 REQUIRED)

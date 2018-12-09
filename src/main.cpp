@@ -11,7 +11,7 @@
 
 void points_to_pcl(const rs2::points& points, pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud);
 
-int main()
+int main(int argc, char *argv[])
 {
 	try
 	{

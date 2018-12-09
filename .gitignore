@@ -2,3 +2,5 @@
 cmake-build-*
 build
 *.swp
+.vs
+CMakeSettings.json
