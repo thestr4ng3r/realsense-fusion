@@ -17,3 +17,12 @@ add_definitions(${PCL_DEFINITIONS})
 add_executable(scanner ${SOURCE_FILES})
 target_link_libraries(scanner "${realsense2_LIBRARY}")
 target_link_libraries(scanner ${PCL_LIBRARIES})
+
+if(realsense2_DLL)
+	message(STATUS "Adding Post build script to copy realsense2.dll to project's binary folder")
+	message(STATUS "Will try to copy ${realsense2_DLL} to ${CMAKE_CURRENT_BINARY_DIR}")
+	add_custom_command(TARGET scanner POST_BUILD
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			"${realsense2_DLL}"
+			${CMAKE_CURRENT_BINARY_DIR})
+endif()

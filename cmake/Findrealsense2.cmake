@@ -41,6 +41,7 @@
 
 set(realsense2_INC_SEARCH_PATH /usr/local/include)
 set(realsense2_LIB_SEARCH_PATH /usr/local/lib)
+set(realsense2_DLL_SEARCH_PATH "")
 
 if(MSVC)
   list(APPEND realsense2_INC_SEARCH_PATH "C:/librealsense2/include")
@@ -54,8 +55,10 @@ if(MSVC)
   
   if(CMAKE_CL_64)
     list(APPEND realsense2_LIB_SEARCH_PATH "C:/Program Files (x86)/Intel RealSense SDK 2.0/lib/x64")
+    list(APPEND realsense2_DLL_SEARCH_PATH "C:/Program Files (x86)/Intel RealSense SDK 2.0/bin/x64")
   else()
     list(APPEND realsense2_LIB_SEARCH_PATH "C:/Program Files (x86)/Intel RealSense SDK 2.0/lib/x86")
+    list(APPEND realsense2_DLL_SEARCH_PATH "C:/Program Files (x86)/Intel RealSense SDK 2.0/bin/x86")
   endif()
 else()
   list(APPEND realsense2_INC_SEARCH_PATH /usr/include)
@@ -78,6 +81,17 @@ find_library(realsense2_LIBRARY
     ${realsense2_LIB_SEARCH_PATH}
 )
 
+if(realsense2_DLL_SEARCH_PATH)
+	find_file(realsense2_DLL
+		realsense2.dll
+		PATHS ${realsense2_DLL_SEARCH_PATH})
+	if(realsense2_DLL STREQUAL realsense2_DLL-NOTFOUND)
+		unset(realsense2_DLL)
+	endif()
+else()
+	unset(realsense2_DLL)
+endif()
+
 if(realsense2_LIBRARY AND realsense2_INCLUDE_DIR)
   set(realsense2_FOUND TRUE)
   #vp_parse_header("${realsense2_INCLUDE_DIR}/librealsense2/rs.h" realsense2_VERSION_LINES RS2_API_MAJOR_VERSION RS2_API_MINOR_VERSION RS2_API_PATCH_VERSION)
@@ -90,6 +104,8 @@ endif()
 mark_as_advanced(
   realsense2_INCLUDE_DIR
   realsense2_LIBRARY
+  realsense2_DLL
   realsense2_INC_SEARCH_PATH
   realsense2_LIB_SEARCH_PATH
+  realsense2_DLL_SEARCH_PATH
 )
