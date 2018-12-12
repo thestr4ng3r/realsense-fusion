@@ -4,7 +4,18 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 message("CMAKE_TOOLCHAIN_FILE: \"${CMAKE_TOOLCHAIN_FILE}\"")
 
-set(SOURCE_FILES src/main.cpp)
+set(HEADER_FILES
+		include/frame.h
+		include/input.h
+		include/realsense_input.h)
+
+set(SOURCE_FILES
+		src/main.cpp
+		src/realsense_input.cpp
+		src/frame.cpp)
+
+
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
 
 find_package(realsense2 REQUIRED)
 include_directories("${realsense2_INCLUDE_DIR}")
