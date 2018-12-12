@@ -1,5 +1,10 @@
 
+#include "input.h"
+
+#ifdef ENABLE_INPUT_REALSENSE
 #include "realsense_input.h"
+#endif
+
 #include "frame.h"
 
 #include <pcl/visualization/cloud_viewer.h>
@@ -11,7 +16,16 @@ int main(int argc, char *argv[])
 {
 	Input *input;
 
+#if defined(ENABLE_INPUT_REALSENSE)
 	input = new RealSenseInput();
+#if defined(ENABLE_INPUT_KINECT)
+#warning "Building with both RealSense and Kinect. Using RealSense."
+#endif
+#elif defined(ENABLE_INPUT_KINECT)
+	// TODO: input = ... for kinect
+#else
+#error "Build with no input!"
+#endif
 
 	Frame frame;
 	pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud(new pcl::PointCloud<pcl::PointXYZ>);

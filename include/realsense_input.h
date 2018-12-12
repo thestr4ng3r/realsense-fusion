@@ -1,4 +1,5 @@
 
+#ifdef ENABLE_INPUT_REALSENSE
 #ifndef _REALSENSE_INPUT_H
 #define _REALSENSE_INPUT_H
 
@@ -21,3 +22,4 @@ class RealSenseInput : public Input
 };
 
 #endif //INPUT_H
+#endif

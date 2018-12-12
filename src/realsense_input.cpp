@@ -1,4 +1,5 @@
 
+#ifdef ENABLE_INPUT_REALSENSE
 #include "frame.h"
 #include "realsense_input.h"
 
@@ -65,3 +66,5 @@ void PointsToPCL(const rs2::points& points, pcl::PointCloud<pcl::PointXYZ>::Ptr 
 		ptr++;
 	}
 }
+
+#endif
