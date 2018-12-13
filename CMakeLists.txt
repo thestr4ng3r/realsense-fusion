@@ -10,12 +10,18 @@ message("CMAKE_TOOLCHAIN_FILE: \"${CMAKE_TOOLCHAIN_FILE}\"")
 set(HEADER_FILES
 		include/frame.h
 		include/input.h
+		include/model.h
 		include/realsense_input.h)
 
 set(SOURCE_FILES
 		src/main.cpp
 		src/realsense_input.cpp
-		src/frame.cpp)
+		src/frame.cpp
+		src/model.cpp)
+
+set(MODEL_TEST_FILES
+		tests/modeltest.cpp
+		src/model.cpp)
 
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/include")
@@ -39,12 +45,29 @@ add_definitions(${PCL_DEFINITIONS})
 add_executable(scanner ${SOURCE_FILES})
 target_link_libraries(scanner ${PCL_LIBRARIES})
 
+#Test Executables
+add_executable(modeltest ${MODEL_TEST_FILES})
+target_link_libraries(modeltest ${PCL_LIBRARIES})
+
+
 if(BUILD_INPUT_REALSENSE)
 	target_link_libraries(scanner "${realsense2_LIBRARY}")
 	if(realsense2_DLL)
 		message(STATUS "Adding Post build script to copy realsense2.dll to project's binary folder")
 		message(STATUS "Will try to copy ${realsense2_DLL} to ${CMAKE_CURRENT_BINARY_DIR}")
 		add_custom_command(TARGET scanner POST_BUILD
+			COMMAND ${CMAKE_COMMAND} -E copy_if_different
+				"${realsense2_DLL}"
+				${CMAKE_CURRENT_BINARY_DIR})
+	endif()
+endif()
+
+if(BUILD_INPUT_REALSENSE)
+	target_link_libraries(modeltest "${realsense2_LIBRARY}")
+	if(realsense2_DLL)
+		message(STATUS "Adding Post build script to copy realsense2.dll to project's binary folder")
+		message(STATUS "Will try to copy ${realsense2_DLL} to ${CMAKE_CURRENT_BINARY_DIR}")
+		add_custom_command(TARGET modeltest POST_BUILD
 			COMMAND ${CMAKE_COMMAND} -E copy_if_different
 				"${realsense2_DLL}"
 				${CMAKE_CURRENT_BINARY_DIR})
