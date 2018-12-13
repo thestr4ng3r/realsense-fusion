@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
 #if defined(ENABLE_INPUT_REALSENSE)
 	input = new RealSenseInput();
 #if defined(ENABLE_INPUT_KINECT)
-#warning "Building with both RealSense and Kinect. Using RealSense."
+//#warning "Building with both RealSense and Kinect. Using RealSense."
 #endif
 #elif defined(ENABLE_INPUT_KINECT)
 	// TODO: input = ... for kinect
