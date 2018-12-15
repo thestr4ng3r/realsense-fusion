@@ -9,7 +9,8 @@ class Sphere
 		{
 			this->radius = radius;
 		}
-		~Sphere();
+
+		~Sphere(){}
 
 		Sphere(const float radius, const float x_center, const float y_center, const float z_center)
 		{

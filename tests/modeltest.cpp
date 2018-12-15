@@ -9,6 +9,9 @@ int main(int argc, char *argv[])
 
 	model.debugToLog();
 
+	Eigen::Vector3f c(0.0f, 0.0f, 0.0f);
+	model.generateSphere(0.1, c);
+
 	system("pause");
 	return 0;
 }
