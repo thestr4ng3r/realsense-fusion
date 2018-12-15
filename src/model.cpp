@@ -23,11 +23,14 @@ void Model::init(int resolutionX, int resolutionY, int resolutionZ, float cellSi
 // Origin is located at min (-resX/2, -resY/2 , -resZ/2)
 Model::Model(int resolutionX, int resolutionY, int resolutionZ, float cellSize)
 {
+	init(resolutionX, resolutionY, resolutionZ, cellSize);
+
 	const float cornerX = - static_cast<float>(resolutionX) / 2 * cellSize;
 	const float cornerY = - static_cast<float>(resolutionY) / 2 * cellSize;
 	const float cornerZ = - static_cast<float>(resolutionZ) / 2 * cellSize;
 
 	this->modelOrigin = Eigen::Vector3f(cornerX, cornerY, cornerZ);
+
 }
 
 Model::Model(int resolutionX, int resolutionY, int resolutionZ, float cellSize, Eigen::Vector3f modelOrigin)
@@ -51,12 +54,12 @@ void Model::debugToLog()
 	int y = resolutionY ;
 	int z = resolutionZ ;
 
-	std::cout << "Write contents of Model to cout";
-	std::cout << "resolutionX" << x << "\n";
-	std::cout << "resolutionX" << y << "\n";
-	std::cout << "resolutionX" << z << "\n";
+	std::cout << "Write contents of Model to cout \n";
+	std::cout << "resolutionX :" << x << "\n";
+	std::cout << "resolutionY :" << y << "\n";
+	std::cout << "resolutionZ :" << z << "\n";
 
-	std::cout << "tsdf of size" << x * y * z ;
+	std::cout << "tsdf of size :" << x * y * z ;
 
 	std::cout << "grid with cellSize : " << cellSize << "\n";
 	std::cout << "total length in x : " << x * cellSize << "\n";
