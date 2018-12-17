@@ -3,7 +3,7 @@
 
 #include <pcl/common/eigen.h>
 
-//#define DEBUG = 0;
+#define DEBUG = 0;
 
 class Model {
 
@@ -32,7 +32,7 @@ class Model {
 	
 		int IDX(int x, int y, int z) //3d index -> 1d index
 		{
-			return	z * (resolutionY + y) * resolutionX + x;
+			return	(z * resolutionY * resolutionX) + (resolutionX * y) + x;
 		}
 };
 
