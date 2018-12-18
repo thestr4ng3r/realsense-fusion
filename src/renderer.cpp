@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 
 #include "renderer.h"
+#include "model.h"
 
 #include <stdio.h>
 #include <exception>
@@ -59,6 +60,8 @@ static const char *fragment_shader_code =
 R"glsl(
 #version 330 core
 
+uniform sampler3D tsdf_tex;
+
 in vec3 grid_pos;
 in vec3 grid_dir;
 
@@ -66,8 +69,7 @@ out vec4 color_out;
 
 float SDF(vec3 pos)
 {
-	vec3 dir = pos - vec3(0.5, 0.5, 0.5);
-	return length(dir) - 0.5;
+	return texture(tsdf_tex, pos).x;
 }
 
 vec3 Normal(vec3 pos, float epsilon)
@@ -78,6 +80,8 @@ vec3 Normal(vec3 pos, float epsilon)
 		SDF(pos + vec3(0.0, 0.0, epsilon)) - SDF(pos - vec3(0.0, 0.0, epsilon))
 	));
 }
+
+#define STEP_MIN 0.01
 
 bool TraceRay(inout vec3 pos, vec3 dir)
 {
@@ -91,7 +95,7 @@ bool TraceRay(inout vec3 pos, vec3 dir)
 		float dist = SDF(pos);
 		if(dist <= 0.0)
 			return true;
-		pos += dir * dist;
+		pos += dir * max(dist, STEP_MIN);
 	}
 }
 
@@ -132,6 +136,10 @@ struct RendererInternal
 
 	GLint mvp_matrix_uniform = -1;
 	GLint cam_pos_uniform = -1;
+
+	GLint tsdf_tex_uniform = -1;
+
+	GLuint tsdf_tex = 0;
 };
 
 Renderer::Renderer()
@@ -239,6 +247,25 @@ void Renderer::InitResources()
 
 	internal->mvp_matrix_uniform = glGetUniformLocation(internal->program, "mvp_matrix");
 	internal->cam_pos_uniform = glGetUniformLocation(internal->program, "cam_pos");
+	internal->tsdf_tex_uniform = glGetUniformLocation(internal->program, "tsdf_tex");
+
+	glUniform1i(internal->tsdf_tex_uniform, 0);
+
+	glActiveTexture(GL_TEXTURE0);
+	glGenTextures(1, &internal->tsdf_tex);
+	glBindTexture(GL_TEXTURE_3D, internal->tsdf_tex);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+}
+
+void Renderer::UpdateModel(Model *model)
+{
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_3D, internal->tsdf_tex);
+	glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, model->GetResolutionX(), model->GetResolutionY(), model->GetResolutionZ(), 0, GL_RED, GL_FLOAT, model->GetData());
 }
 
 void Renderer::Update()
@@ -266,6 +293,8 @@ void Renderer::Update()
 	glUseProgram(internal->program);
 	glUniformMatrix4fv(internal->mvp_matrix_uniform, 1, GL_FALSE, mvp_matrix.data());
 	glUniform3fv(internal->cam_pos_uniform, 1, cam_pos.data());
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_3D, internal->tsdf_tex);
 	glBindVertexArray(internal->vao);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, internal->ibo);
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, nullptr);

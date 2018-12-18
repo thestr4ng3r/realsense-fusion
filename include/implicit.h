@@ -24,7 +24,7 @@ class Sphere
 			x = x - x_center;
 			y = y - y_center;
 			z = z - z_center;
-			return x*x + y*y + z*z - radius * radius;
+			return sqrt(x*x + y*y + z*z) - radius;
 		}
 
 	private:

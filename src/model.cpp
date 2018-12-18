@@ -5,7 +5,7 @@
 
 
 
-void Model::init(int resolutionX, int resolutionY, int resolutionZ, float cellSize)
+void Model::Init(int resolutionX, int resolutionY, int resolutionZ, float cellSize)
 {
 	if (resolutionX % 2 != 0 || resolutionY % 2 != 0 || resolutionZ % 2 != 0)
 	{
@@ -26,7 +26,7 @@ void Model::init(int resolutionX, int resolutionY, int resolutionZ, float cellSi
 // Origin is located at min (-resX/2, -resY/2 , -resZ/2)
 Model::Model(int resolutionX, int resolutionY, int resolutionZ, float cellSize)
 {
-	init(resolutionX, resolutionY, resolutionZ, cellSize);
+	Init(resolutionX, resolutionY, resolutionZ, cellSize);
 
 	const float cornerX = - static_cast<float>(resolutionX) / 2.0f * cellSize;
 	const float cornerY = - static_cast<float>(resolutionY) / 2.0f * cellSize;
@@ -38,7 +38,7 @@ Model::Model(int resolutionX, int resolutionY, int resolutionZ, float cellSize)
 
 Model::Model(int resolutionX, int resolutionY, int resolutionZ, float cellSize, Eigen::Vector3f modelOrigin)
 {
-	init(resolutionX, resolutionY, resolutionZ, cellSize);
+	Init(resolutionX, resolutionY, resolutionZ, cellSize);
 
 	//assert model in grid
 
@@ -50,7 +50,7 @@ Model::~Model()
 	delete this->tsdf;
 }
 
-void Model::generateSphere(float radius, Eigen::Vector3f center)
+void Model::GenerateSphere(float radius, Eigen::Vector3f center)
 {
 	_IMPLICIT_H::Sphere sphere(radius, center.x(), center.y(), center.z());
 	//iterate over all sdf fields
@@ -61,10 +61,10 @@ void Model::generateSphere(float radius, Eigen::Vector3f center)
 			for (int x = 0; x < resolutionX; x++)
 			{
 				Eigen::Vector3f pos;
-				approximateModelPosition(x, y, z, pos);
-#ifdef DEBUG
-				std::cout << "grid value : " << x << " " << y << " " << z << "in Modelspace : " << pos.x() << " " << pos.y() << " " << pos.z() << "\n";
-#endif // DEBUG
+				ApproximateModelPosition(x, y, z, pos);
+//#ifdef DEBUG
+//				std::cout << "grid value : " << x << " " << y << " " << z << "in Modelspace : " << pos.x() << " " << pos.y() << " " << pos.z() << "\n";
+//#endif // DEBUG
 				float eval = sphere.sdf(pos.x(), pos.y(), pos.z());
 				int cellIndex = IDX(x, y, z);
 				tsdf[cellIndex] = eval;
@@ -74,7 +74,7 @@ void Model::generateSphere(float radius, Eigen::Vector3f center)
 }
 
 //approximate center of sdf field by cell center and cell length
-void Model::approximateModelPosition(int x, int y, int z, Eigen::Vector3f& pos)
+void Model::ApproximateModelPosition(int x, int y, int z, Eigen::Vector3f &pos)
 {
 	//scale in Model Space
 	float x_field = (static_cast<float>(x) - resolutionX / 2.0f) * cellSize;
@@ -90,7 +90,7 @@ void Model::approximateModelPosition(int x, int y, int z, Eigen::Vector3f& pos)
 }
 
 
-void Model::debugToLog()
+void Model::DebugToLog()
 {
 
 	int x = resolutionX ;

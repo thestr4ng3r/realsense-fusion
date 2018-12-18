@@ -3,6 +3,7 @@
 #define _RENDERER_H
 
 struct RendererInternal;
+class Model;
 
 class Renderer
 {
@@ -16,6 +17,7 @@ class Renderer
 		Renderer();
 		~Renderer();
 
+		void UpdateModel(Model *model);
 		void Update();
 
 		bool GetShouldTerminate()	{ return should_terminate; }

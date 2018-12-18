@@ -8,9 +8,9 @@ int main(int argc, char *argv[])
 	Model model(4, 4, 4, 0.1);
 
 	Eigen::Vector3f c(0.0f, 0.0f, 0.0f);
-	model.generateSphere(0.1, c);
+	model.GenerateSphere(0.1, c);
 
-	model.debugToLog();
+	model.DebugToLog();
 
 	system("pause");
 	return 0;
