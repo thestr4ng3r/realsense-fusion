@@ -2,7 +2,7 @@
 #ifndef _RENDERER_H
 #define _RENDERER_H
 
-class CPUModel;
+class GLModel;
 class Window;
 
 class Renderer
@@ -20,16 +20,13 @@ class Renderer
 
 		GLint tsdf_tex_uniform = -1;
 
-		GLuint tsdf_tex = 0;
-
 		void InitResources();
 
 	public:
 		explicit Renderer(Window *window);
 		~Renderer();
 
-		void UpdateModel(CPUModel *model);
-		void Render();
+		void Render(GLModel *model);
 };
 
 #endif //_RENDERER_H

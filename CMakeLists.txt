@@ -15,14 +15,16 @@ set(HEADER_FILES
 		include/model.h
 		include/realsense_input.h
 		include/renderer.h
-		include/window.h)
+		include/window.h
+		include/gl_model.h)
 
 set(SOURCE_FILES
 		src/realsense_input.cpp
 		src/frame.cpp
 		src/model.cpp
 		src/renderer.cpp
-		src/window.cpp)
+		src/window.cpp
+		src/gl_model.cpp)
 
 set(SOURCE_FILE_MAIN
 		src/main.cpp)

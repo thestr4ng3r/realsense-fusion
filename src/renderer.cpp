@@ -1,7 +1,7 @@
 
 #include "window.h"
 #include "renderer.h"
-#include "model.h"
+#include "gl_model.h"
 
 #include <stdio.h>
 #include <exception>
@@ -209,25 +209,9 @@ void Renderer::InitResources()
 	tsdf_tex_uniform = glGetUniformLocation(program, "tsdf_tex");
 
 	glUniform1i(tsdf_tex_uniform, 0);
-
-	glActiveTexture(GL_TEXTURE0);
-	glGenTextures(1, &tsdf_tex);
-	glBindTexture(GL_TEXTURE_3D, tsdf_tex);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 }
 
-void Renderer::UpdateModel(CPUModel *model)
-{
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_3D, tsdf_tex);
-	glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, model->GetResolutionX(), model->GetResolutionY(), model->GetResolutionZ(), 0, GL_RED, GL_FLOAT, model->GetData());
-}
-
-void Renderer::Render()
+void Renderer::Render(GLModel *model)
 {
 	int width, height;
 	window->GetSize(&width, &height);
@@ -247,7 +231,7 @@ void Renderer::Render()
 	glUniformMatrix4fv(mvp_matrix_uniform, 1, GL_FALSE, mvp_matrix.data());
 	glUniform3fv(cam_pos_uniform, 1, cam_pos.data());
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_3D, tsdf_tex);
+	glBindTexture(GL_TEXTURE_3D, model->GetTSDFTex());
 	glBindVertexArray(vao);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, nullptr);
