@@ -1,18 +1,23 @@
 
+#include "window.h"
 #include "renderer.h"
 #include "model.h"
 
 int main(int argc, char *argv[])
 {
-	Model *model = new Model(128, 128, 128, 1.0f / 128.0f);
+	auto model = new CPUModel(128, 128, 128, 1.0f / 128.0f);
 	model->GenerateSphere(0.3f, Eigen::Vector3f(0.0f, 0.0f, 0.0f));
 
-	Renderer renderer;
+	Window window;
+	Renderer renderer(&window);
 
-	while(!renderer.GetShouldTerminate())
+	while(!window.GetShouldTerminate())
 	{
+		window.Update();
+		window.BeginRender();
 		renderer.UpdateModel(model);
-		renderer.Update();
+		renderer.Render();
+		window.EndRender();
 	}
 
 	delete model;

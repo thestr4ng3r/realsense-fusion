@@ -10,22 +10,18 @@ class Model
 	public:
 		Model(int resolutionX, int resolutionY, int resolutionZ, float cellSize);
 		Model(int resolutionX, int resolutionY, int resolutionZ, float cellSize, Eigen::Vector3f modelOrigin);
-		~Model();
+		virtual ~Model();
 
-		float *GetData()					{ return tsdf; }
 		int GetResolutionX()				{ return resolutionX; }
 		int GetResolutionY()				{ return resolutionY; }
 		int GetResolutionZ()				{ return resolutionZ; }
 		float GetCellSize()					{ return cellSize; }
 		Eigen::Vector3f GetModelOrigin()	{ return modelOrigin; }
-		
-		void GenerateSphere(float radius, Eigen::Vector3f center);
-
-		void DebugToLog();
 
 	private:
-		float* tsdf; //truncated signed distance function
+		void Init(int resolutionX, int resolutionY, int resolutionZ, float cellSize);
 
+	protected:
 		int resolutionX;
 		int resolutionY;
 		int resolutionZ;
@@ -33,14 +29,30 @@ class Model
 		float cellSize;
 
 		Eigen::Vector3f modelOrigin;
-		
-		void Init(int resolutionX, int resolutionY, int resolutionZ, float cellSize);
+
 		void ApproximateModelPosition(int x, int y, int z, Eigen::Vector3f &pos);
-	
+};
+
+class CPUModel: public Model
+{
+	private:
+		float *tsdf; //truncated signed distance function
+
 		int IDX(int x, int y, int z) //3d index -> 1d index
 		{
 			return	(z * resolutionY * resolutionX) + (resolutionX * y) + x;
 		}
+
+		void Init();
+
+	public:
+		CPUModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize);
+		CPUModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize, Eigen::Vector3f modelOrigin);
+		~CPUModel() override;
+
+		float *GetData()					{ return tsdf; }
+		void GenerateSphere(float radius, Eigen::Vector3f center);
+		void DebugToLog();
 };
 
 #endif

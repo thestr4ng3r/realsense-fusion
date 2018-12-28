@@ -2,25 +2,34 @@
 #ifndef _RENDERER_H
 #define _RENDERER_H
 
-struct RendererInternal;
-class Model;
+class CPUModel;
+class Window;
 
 class Renderer
 {
 	private:
-		RendererInternal *internal;
-		bool should_terminate;
+		Window *window;
+
+		GLuint vbo = 0;
+		GLuint vao = 0;
+		GLuint ibo = 0;
+		GLuint program = 0;
+
+		GLint mvp_matrix_uniform = -1;
+		GLint cam_pos_uniform = -1;
+
+		GLint tsdf_tex_uniform = -1;
+
+		GLuint tsdf_tex = 0;
 
 		void InitResources();
 
 	public:
-		Renderer();
+		explicit Renderer(Window *window);
 		~Renderer();
 
-		void UpdateModel(Model *model);
-		void Update();
-
-		bool GetShouldTerminate()	{ return should_terminate; }
+		void UpdateModel(CPUModel *model);
+		void Render();
 };
 
 #endif //_RENDERER_H

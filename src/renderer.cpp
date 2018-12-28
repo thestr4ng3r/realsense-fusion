@@ -1,7 +1,5 @@
 
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
-
+#include "window.h"
 #include "renderer.h"
 #include "model.h"
 
@@ -127,59 +125,20 @@ void main()
 
 struct RendererInternal
 {
-	GLFWwindow *window = nullptr;
-
-	GLuint vbo = 0;
-	GLuint vao = 0;
-	GLuint ibo = 0;
-	GLuint program = 0;
-
-	GLint mvp_matrix_uniform = -1;
-	GLint cam_pos_uniform = -1;
-
-	GLint tsdf_tex_uniform = -1;
-
-	GLuint tsdf_tex = 0;
 };
 
-Renderer::Renderer()
+Renderer::Renderer(Window *window)
 {
-	if(!glfwInit())
-		throw std::exception();
-
-	internal = new RendererInternal();
-
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	internal->window = glfwCreateWindow(640, 480, "Renderer", nullptr, nullptr);
-
-	if(!internal->window)
-	{
-		delete internal;
-		glfwTerminate();
-		throw std::exception();
-	}
-
-	glfwMakeContextCurrent(internal->window);
-	glewInit();
-
-	should_terminate = false;
-
+	this->window = window;
 	InitResources();
 }
 
 Renderer::~Renderer()
 {
-	glDeleteBuffers(1, &internal->vbo);
-	glDeleteBuffers(1, &internal->ibo);
-	glDeleteVertexArrays(1, &internal->vao);
-	glDeleteProgram(internal->program);
-
-	glfwDestroyWindow(internal->window);
-	glfwTerminate();
-
-	delete internal;
+	glDeleteBuffers(1, &vbo);
+	glDeleteBuffers(1, &ibo);
+	glDeleteVertexArrays(1, &vao);
+	glDeleteProgram(program);
 }
 
 void Renderer::InitResources()
@@ -204,17 +163,17 @@ void Renderer::InitResources()
 			4, 1, 5, 4, 0, 1, // bottom
 	};
 
-	glGenBuffers(1, &internal->vbo);
-	glBindBuffer(GL_ARRAY_BUFFER, internal->vbo);
+	glGenBuffers(1, &vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data), vertex_data, GL_STATIC_DRAW);
 
-	glGenVertexArrays(1, &internal->vao);
-	glBindVertexArray(internal->vao);
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
 	glEnableVertexAttribArray(ATTRIBUTE_VERTEX_POS);
 	glVertexAttribPointer(ATTRIBUTE_VERTEX_POS, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
 
-	glGenBuffers(1, &internal->ibo);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, internal->ibo);
+	glGenBuffers(1, &ibo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index_data), index_data, GL_STATIC_DRAW);
 
 
@@ -226,18 +185,18 @@ void Renderer::InitResources()
 	glShaderSource(frag_shader, 1, &fragment_shader_code, nullptr);
 	glCompileShader(frag_shader);
 
-	internal->program = glCreateProgram();
-	glAttachShader(internal->program, vert_shader);
-	glAttachShader(internal->program, frag_shader);
-	glLinkProgram(internal->program);
+	program = glCreateProgram();
+	glAttachShader(program, vert_shader);
+	glAttachShader(program, frag_shader);
+	glLinkProgram(program);
 
 	GLint result, log_len;
-	glGetProgramiv(internal->program, GL_LINK_STATUS, &result);
-	glGetProgramiv(internal->program, GL_INFO_LOG_LENGTH, &log_len);
+	glGetProgramiv(program, GL_LINK_STATUS, &result);
+	glGetProgramiv(program, GL_INFO_LOG_LENGTH, &log_len);
 	if(log_len > 0)
 	{
 		char *log = new char[log_len + 1];
-		glGetProgramInfoLog(internal->program, log_len, nullptr, log);
+		glGetProgramInfoLog(program, log_len, nullptr, log);
 		printf("%s\n", log);
 		delete[] log;
 	}
@@ -245,15 +204,15 @@ void Renderer::InitResources()
 	glDeleteShader(vert_shader);
 	glDeleteShader(frag_shader);
 
-	internal->mvp_matrix_uniform = glGetUniformLocation(internal->program, "mvp_matrix");
-	internal->cam_pos_uniform = glGetUniformLocation(internal->program, "cam_pos");
-	internal->tsdf_tex_uniform = glGetUniformLocation(internal->program, "tsdf_tex");
+	mvp_matrix_uniform = glGetUniformLocation(program, "mvp_matrix");
+	cam_pos_uniform = glGetUniformLocation(program, "cam_pos");
+	tsdf_tex_uniform = glGetUniformLocation(program, "tsdf_tex");
 
-	glUniform1i(internal->tsdf_tex_uniform, 0);
+	glUniform1i(tsdf_tex_uniform, 0);
 
 	glActiveTexture(GL_TEXTURE0);
-	glGenTextures(1, &internal->tsdf_tex);
-	glBindTexture(GL_TEXTURE_3D, internal->tsdf_tex);
+	glGenTextures(1, &tsdf_tex);
+	glBindTexture(GL_TEXTURE_3D, tsdf_tex);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -261,23 +220,17 @@ void Renderer::InitResources()
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 }
 
-void Renderer::UpdateModel(Model *model)
+void Renderer::UpdateModel(CPUModel *model)
 {
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_3D, internal->tsdf_tex);
+	glBindTexture(GL_TEXTURE_3D, tsdf_tex);
 	glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, model->GetResolutionX(), model->GetResolutionY(), model->GetResolutionZ(), 0, GL_RED, GL_FLOAT, model->GetData());
 }
 
-void Renderer::Update()
+void Renderer::Render()
 {
 	int width, height;
-	glfwGetFramebufferSize(internal->window, &width, &height);
-
-	glViewport(0, 0, width, height);
-	glClearColor(0.0, 0.0, 0.0, 1.0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glCullFace(GL_BACK);
-	glEnable(GL_CULL_FACE);
+	window->GetSize(&width, &height);
 
 	Eigen::Vector3f cam_pos(0.0f, 0.0f, 3.0f);
 
@@ -290,18 +243,13 @@ void Renderer::Update()
 
 	Eigen::Matrix4f mvp_matrix_inv = mvp_matrix.inverse();
 
-	glUseProgram(internal->program);
-	glUniformMatrix4fv(internal->mvp_matrix_uniform, 1, GL_FALSE, mvp_matrix.data());
-	glUniform3fv(internal->cam_pos_uniform, 1, cam_pos.data());
+	glUseProgram(program);
+	glUniformMatrix4fv(mvp_matrix_uniform, 1, GL_FALSE, mvp_matrix.data());
+	glUniform3fv(cam_pos_uniform, 1, cam_pos.data());
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_3D, internal->tsdf_tex);
-	glBindVertexArray(internal->vao);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, internal->ibo);
+	glBindTexture(GL_TEXTURE_3D, tsdf_tex);
+	glBindVertexArray(vao);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, nullptr);
-
-	glfwSwapBuffers(internal->window);
-	glfwPollEvents();
-
-	should_terminate = static_cast<bool>(glfwWindowShouldClose(internal->window));
 }
 

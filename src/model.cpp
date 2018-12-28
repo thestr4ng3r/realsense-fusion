@@ -14,9 +14,6 @@ void Model::Init(int resolutionX, int resolutionY, int resolutionZ, float cellSi
 	this->resolutionX = resolutionX;
 	this->resolutionY = resolutionY;
 	this->resolutionZ = resolutionZ;
-	
-	this->tsdf = new float[resolutionX*resolutionY*resolutionZ];
-	// init with -inf missing here
 
 	this->cellSize = cellSize;
 
@@ -47,10 +44,55 @@ Model::Model(int resolutionX, int resolutionY, int resolutionZ, float cellSize, 
 
 Model::~Model()
 {
-	delete this->tsdf;
 }
 
-void Model::GenerateSphere(float radius, Eigen::Vector3f center)
+
+//approximate center of sdf field by cell center and cell length
+void Model::ApproximateModelPosition(int x, int y, int z, Eigen::Vector3f &pos)
+{
+	//scale in Model Space
+	float x_field = (static_cast<float>(x) - resolutionX / 2.0f) * cellSize;
+	float y_field = (static_cast<float>(y) - resolutionY / 2.0f) * cellSize;
+	float z_field = (static_cast<float>(z) - resolutionZ / 2.0f) * cellSize;
+
+	//shift into cell center
+	x_field += cellSize / 2.0f;
+	y_field += cellSize / 2.0f;
+	z_field += cellSize / 2.0f;
+	
+	pos = Eigen::Vector3f(x_field, y_field, z_field);
+}
+
+
+
+
+
+
+
+CPUModel::CPUModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize)
+	: Model(resolutionX, resolutionY, resolutionZ, cellSize)
+{
+	Init();
+}
+
+CPUModel::CPUModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize, Eigen::Vector3f modelOrigin)
+	: Model(resolutionX, resolutionY, resolutionZ, cellSize, modelOrigin)
+{
+	Init();
+}
+
+CPUModel::~CPUModel()
+{
+	delete [] tsdf;
+}
+
+void CPUModel::Init()
+{
+	tsdf = new float[resolutionX*resolutionY*resolutionZ];
+	// init with -inf missing here
+}
+
+void CPUModel::GenerateSphere(float radius, Eigen::Vector3f center)
 {
 	_IMPLICIT_H::Sphere sphere(radius, center.x(), center.y(), center.z());
 	//iterate over all sdf fields
@@ -73,24 +115,7 @@ void Model::GenerateSphere(float radius, Eigen::Vector3f center)
 	}
 }
 
-//approximate center of sdf field by cell center and cell length
-void Model::ApproximateModelPosition(int x, int y, int z, Eigen::Vector3f &pos)
-{
-	//scale in Model Space
-	float x_field = (static_cast<float>(x) - resolutionX / 2.0f) * cellSize;
-	float y_field = (static_cast<float>(y) - resolutionY / 2.0f) * cellSize;
-	float z_field = (static_cast<float>(z) - resolutionZ / 2.0f) * cellSize;
-
-	//shift into cell center
-	x_field += cellSize / 2.0f;
-	y_field += cellSize / 2.0f;
-	z_field += cellSize / 2.0f;
-	
-	pos = Eigen::Vector3f(x_field, y_field, z_field);
-}
-
-
-void Model::DebugToLog()
+void CPUModel::DebugToLog()
 {
 
 	int x = resolutionX ;
@@ -130,4 +155,3 @@ void Model::DebugToLog()
 		}
 	}
 }
-
