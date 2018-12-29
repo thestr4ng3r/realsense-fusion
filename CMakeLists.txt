@@ -72,12 +72,16 @@ target_link_libraries(modeltest ${PCL_LIBRARIES})
 add_executable(renderertest ${SOURCE_FILES} ${HEADER_FILES} tests/renderertest.cpp)
 target_link_libraries(renderertest ${PCL_LIBRARIES} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} glfw ${IMGUI_SOURCE_FILES})
 
+add_executable(integrationtest ${SOURCE_FILES} ${HEADER_FILES} tests/integrationtest.cpp)
+target_link_libraries(integrationtest ${PCL_LIBRARIES} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} glfw ${IMGUI_SOURCE_FILES})
+
 
 
 if(BUILD_INPUT_REALSENSE)
 	target_link_libraries(scanner "${realsense2_LIBRARY}")
 	target_link_libraries(modeltest "${realsense2_LIBRARY}")
 	target_link_libraries(renderertest "${realsense2_LIBRARY}")
+	target_link_libraries(integrationtest "${realsense2_LIBRARY}")
 	if(realsense2_DLL)
 		message(STATUS "Adding Post build script to copy realsense2.dll to project's binary folder")
 		message(STATUS "Will try to copy ${realsense2_DLL} to ${CMAKE_CURRENT_BINARY_DIR}")
