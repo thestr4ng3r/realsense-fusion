@@ -30,7 +30,7 @@ Eigen::Matrix<T, 4, 4> PerspectiveMatrix(T fovy, T aspect, T near_clip, T far_cl
 
 static const char *vertex_shader_code =
 R"glsl(
-#version 330 core
+#version 450 core
 
 uniform mat4 mvp_matrix;
 uniform vec3 cam_pos;
@@ -56,7 +56,7 @@ void main()
 
 static const char *fragment_shader_code =
 R"glsl(
-#version 330 core
+#version 450 core
 
 uniform sampler3D tsdf_tex;
 
