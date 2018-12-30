@@ -16,7 +16,8 @@ set(HEADER_FILES
 		include/realsense_input.h
 		include/renderer.h
 		include/window.h
-		include/gl_model.h)
+		include/gl_model.h
+		include/pc_integrator.h)
 
 set(SOURCE_FILES
 		src/realsense_input.cpp
@@ -24,7 +25,8 @@ set(SOURCE_FILES
 		src/model.cpp
 		src/renderer.cpp
 		src/window.cpp
-		src/gl_model.cpp)
+		src/gl_model.cpp
+		src/pc_integrator.cpp)
 
 set(SOURCE_FILE_MAIN
 		src/main.cpp)
