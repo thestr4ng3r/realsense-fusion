@@ -30,6 +30,9 @@ bool RealSenseInput::WaitForFrame(Frame *frame)
 	{
 		auto frames = pipe.wait_for_frames();
 		auto depth = frames.get_depth_frame();
+		frame->depthResolutionX = depth.get_width();
+		frame->depthResolutionY = depth.get_height();
+		frame->SetDepthMap((float*)depth.get_data());  //Have to see if that works
 		points = pc.calculate(depth);
 	}
 	catch(const rs2::error &e)
@@ -46,6 +49,7 @@ bool RealSenseInput::WaitForFrame(Frame *frame)
 
 	auto cloud = frame->GetCloud();
 	PointsToPCL(points, cloud);
+
 
 	return true;
 }
