@@ -13,6 +13,7 @@ class GLModel: public Model
 		void Init();
 
 	public:
+		GLModel();
 		GLModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize);
 		GLModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize, Eigen::Vector3f modelOrigin);
 		~GLModel() override;

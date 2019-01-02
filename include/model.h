@@ -8,6 +8,7 @@
 class Model
 {
 	public:
+		Model();
 		Model(int resolutionX, int resolutionY, int resolutionZ, float cellSize);
 		Model(int resolutionX, int resolutionY, int resolutionZ, float cellSize, Eigen::Vector3f modelOrigin);
 		virtual ~Model();
@@ -46,6 +47,7 @@ class CPUModel: public Model
 		void Init();
 
 	public:
+		CPUModel();
 		CPUModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize);
 		CPUModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize, Eigen::Vector3f modelOrigin);
 		~CPUModel() override;
