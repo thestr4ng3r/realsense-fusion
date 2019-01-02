@@ -13,8 +13,7 @@ class PC_Integrator
 {
 	private:
 
-		GLModel glModel;
-		CPUModel cpumodel;
+		GLModel* glModel;
 
 		GLuint computeHandle;
 
@@ -33,7 +32,7 @@ class PC_Integrator
 		GLuint genTexture2D(int resolutionX, int resolutionY, float* data);
 
 	public:
-		PC_Integrator(CPUModel &cpuModel);
+		PC_Integrator(GLModel* glModel);
 		~PC_Integrator();
 		
 		void integrate(Frame &frame);

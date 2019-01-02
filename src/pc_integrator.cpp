@@ -20,25 +20,19 @@ Eigen::Matrix<T, 4, 4> PerspectiveMatrix(T fovy, T aspect, T near_clip, T far_cl
 }
 
 
-PC_Integrator::PC_Integrator(CPUModel &cpuModel)
+PC_Integrator::PC_Integrator(GLModel* glModel)
 {
-	this->cpumodel = cpuModel;
+	this->glModel = glModel;
 
-	this->resolutionX = cpuModel.GetResolutionX();
-	this->resolutionY = cpuModel.GetResolutionY();
-	this->resolutionZ = cpuModel.GetResolutionZ();
-
-	GLModel glmodel (resolutionX,resolutionY,resolutionZ,cpuModel.GetCellSize(),cpuModel.GetModelOrigin());
-	glmodel.CopyFrom(&cpumodel);
-	this->glModel = glmodel;
+	this->resolutionX = glModel->GetResolutionX();
+	this->resolutionY = glModel->GetResolutionY();
+	this->resolutionZ = glModel->GetResolutionZ();
 
 	this->computeHandle = genComputeProg();
 }
 
 PC_Integrator::~PC_Integrator()
 {
-	this->cpumodel.~CPUModel();
-	this->glModel.~GLModel();
 }
 
 GLuint PC_Integrator::genComputeProg()
@@ -102,8 +96,8 @@ GLuint PC_Integrator::genComputeProg()
 	tsdf_tex_uniform = glGetUniformLocation(progHandle, "tsdf_tex");
 	depth_map_uniform = glGetUniformLocation(progHandle, "depth_map");
 
-	glUniform1i(tsdf_tex_uniform, 0);
-	glUniform1i(depth_map_uniform, 1);
+	glUniform1i(tsdf_tex_uniform, 0); //Image Unit 0
+	glUniform1i(depth_map_uniform, 0);//Texture Unit 0
 
 	return progHandle;
 }
@@ -132,13 +126,12 @@ void PC_Integrator::integrate(Frame &frame)
 	glUniformMatrix4fv(mvp_matrix_uniform, 1, GL_FALSE, mvp_matrix.data());
 	glUniform3fv(cam_pos_uniform, 1, cam_pos.data());
 	glUniformMatrix4fv(transposeInv_uniform, 1, GL_FALSE, transpose.data());
+	glBindImageTexture(0, glModel->GetTSDFTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
 	glActiveTexture(GL_TEXTURE0);
-	glBindImageTexture(GL_TEXTURE_3D, glModel.GetTSDFTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
-	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, depth_map_uniform);
 
 	//todo loop over slide
-	glDispatchCompute(resolutionX*resolutionY / 16, resolutionX*resolutionY / 16, 1);
+	glDispatchCompute(resolutionX*resolutionY, resolutionX*resolutionY, 1);
 
 }
 
@@ -147,12 +140,11 @@ GLuint PC_Integrator::genTexture2D(int resolutionX, int resolutionY, float* data
 	GLuint texHandle;
 	glGenTextures(1, &texHandle);
 
-	glActiveTexture(GL_TEXTURE1);
+	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texHandle);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	//Bind texture as image to allow read write operations
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, resolutionX, resolutionY, 0, GL_RED, GL_FLOAT, NULL); //add here input
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, resolutionX, resolutionY, 0, GL_RED, GL_FLOAT, data); //add here input
 	return texHandle;
 }
