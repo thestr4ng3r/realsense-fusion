@@ -12,23 +12,31 @@ class Window;
 class PC_Integrator
 {
 	private:
+
+		GLModel glModel;
+		CPUModel cpumodel;
+
 		GLuint computeHandle;
-		GLuint tsdfHandle;
-		GLuint depthMapHandle;
+
+		GLuint depth_map_uniform;
+		GLuint mvp_matrix_uniform;
+		GLuint cam_pos_uniform;
+		GLuint tsdf_tex_uniform;
+		GLuint transposeInv_uniform;
 
 		int resolutionX;
 		int resolutionY;
 		int resolutionZ;
+		float cellSize;
 
 		GLuint genComputeProg();
-		GLuint genTexture(int resolution);
-		//Gluint genDepthMapTexture(Input);  ToDo
+		GLuint genTexture2D(int resolutionX, int resolutionY, float* data);
 
 	public:
-		PC_Integrator(GLModel glmodel);
+		PC_Integrator(CPUModel &cpuModel);
 		~PC_Integrator();
 		
-		void integrate_Frame(Frame frame);
+		void integrate(Frame &frame);
 };
 
 #endif //_PC_INTEGRATOR_H
