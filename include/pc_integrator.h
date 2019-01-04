@@ -16,10 +16,14 @@ class PC_Integrator
 		GLModel* glModel;
 
 		GLuint computeHandle;
-
+		GLuint intrinsic_center_uniform;
+		GLuint intrinsic_focalLength_uniform;
+		GLuint resolution_uniform;
+		GLuint cellSize_uniform;
 		GLuint depth_map_uniform;
 		GLuint mvp_matrix_uniform;
 		GLuint cam_pos_uniform;
+		GLuint weight_tex_uniform;
 		GLuint tsdf_tex_uniform;
 		GLuint transposeInv_uniform;
 

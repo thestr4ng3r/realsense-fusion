@@ -45,20 +45,56 @@ GLuint PC_Integrator::genComputeProg()
 		#version 450 core
 
 		uniform image3D  tsdf_tex;
+		uniform image3D  weight_tex;
 		uniform sampler2D depth_map
+
+		uniform vec2 intrinsic_focalLength;
+		uniform vec2 intrinsic_center;
 
 		uniform mat4 mvp_matrix;
 		uniform vec3 cam_pos;
 		uniform mat4 transpose_inv;
 
-		layout (local_size_x = 16, local_size_y = 16, local_size_z=1) in;
+		uniform vec3 resolution;
+		uniform float cellSize;
+
+		layout (local_size_x = 1, local_size_y = 1, local_size_z=1) in;
 		void main() {
-			ivec3 xyz = ivec(gl_globalInvocationID.xyz)
-			vec4 pixel = vec4(ivec.x % 10 ? 1.0f : 0.0f , 1.0f, 1.0f, 1.0f)
+			ivec3 xyz = ivec(gl_globalInvocationID.xyz);
+			
+			float x_field = float(x) - resolution.x / 2.0f) * cellSize;
+			float y_field = float(y) - resolution.y / 2.0f) * cellSize;
+			float z_field = float(z) - resolution.z / 2.0f) * cellSize;
 
-			// TODO Implement Listening 2
+			//shift into cell center
+			x_field += cellSize / 2.0f;
+			y_field += cellSize / 2.0f;
+			z_field += cellSize / 2.0f;
 
-			imageStore(tsdf_tex, ivec, pixel);
+			v_g = vec3(x_field, y_field, z_field);
+
+			v = transpose_inv * v_g;
+
+			vec2 p = vec2(v.x/v.z * intrinsic_focalLength.x + intrinsic_center.x , v.y/v.z * intrinsic_focalLength.y + intrinsic_center.y );
+
+			//ToDo: discard p if v not in frustrum 
+
+			float sdf = distance( cam_pos - v_g ) - texture2D(depth_map, p) ;
+
+			float tsdf;
+
+			if (sdf > 0)
+			{
+				float tsdf = min(1, sdf / 0.000001);
+			}
+			else 
+			{
+				float tsdf = max(-1, sdf/ -0.000001);
+			}		
+
+			// TODO Implement Weighting
+
+			imageStore(tsdf_tex, ivec, tsdf);
 		}		
 	    )glsl";
 
@@ -90,13 +126,19 @@ GLuint PC_Integrator::genComputeProg()
 	}
 	glUseProgram(progHandle);
 
+	intrinsic_center_uniform = glGetUniformLocation(progHandle, "intrinsic_center");
+	intrinsic_focalLength_uniform = glGetUniformLocation(progHandle, "intrinsic_focalLength");
 	mvp_matrix_uniform = glGetUniformLocation(progHandle, "mvp_matrix");
 	cam_pos_uniform = glGetUniformLocation(progHandle, "cam_pos");
 	transposeInv_uniform = glGetUniformLocation(progHandle, "transpose_inv");
 	tsdf_tex_uniform = glGetUniformLocation(progHandle, "tsdf_tex");
+	weight_tex_uniform = glGetUniformLocation(progHandle, "weight_tex");
 	depth_map_uniform = glGetUniformLocation(progHandle, "depth_map");
+	resolution_uniform = glGetUniformLocation(progHandle, "resolution");
+	cellSize_uniform = glGetUniformLocation(progHandle, "cellSize");
 
 	glUniform1i(tsdf_tex_uniform, 0); //Image Unit 0
+	glUniform1i(weight_tex_uniform, 1);
 	glUniform1i(depth_map_uniform, 0);//Texture Unit 0
 
 	return progHandle;
@@ -123,12 +165,21 @@ void PC_Integrator::integrate(Frame &frame)
 	transpose = Eigen::Matrix4f::Identity();
 
 	glUseProgram(this->computeHandle);
+
+	// UNIFORMS
+	// ToDo : Get Intrinsics
+	//glUniform2f(intrinsic_center, )
+	//glUniform2f(intrinsic_focalLength, )
+	glUniform1f(cellSize_uniform, cellSize);
+	glUniform3f(resolution_uniform, resolutionX, resolutionY, resolutionZ);
 	glUniformMatrix4fv(mvp_matrix_uniform, 1, GL_FALSE, mvp_matrix.data());
 	glUniform3fv(cam_pos_uniform, 1, cam_pos.data());
 	glUniformMatrix4fv(transposeInv_uniform, 1, GL_FALSE, transpose.data());
 	glBindImageTexture(0, glModel->GetTSDFTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, depth_map_uniform);
+	glActiveTexture(GL_TEXTURE1);
+	glBindImageTexture(1, glModel->GetWeightTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
 
 	//todo loop over slide
 	glDispatchCompute(resolutionX*resolutionY, resolutionX*resolutionY, 1);

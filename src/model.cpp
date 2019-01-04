@@ -84,11 +84,13 @@ CPUModel::CPUModel(int resolutionX, int resolutionY, int resolutionZ, float cell
 CPUModel::~CPUModel()
 {
 	delete [] tsdf;
+	delete [] weigths;
 }
 
 void CPUModel::Init()
 {
 	tsdf = new float[resolutionX*resolutionY*resolutionZ];
+	weigths = new float[resolutionX*resolutionY*resolutionZ];
 	// init with -inf missing here
 }
 

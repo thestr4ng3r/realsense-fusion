@@ -9,6 +9,7 @@ class GLModel: public Model
 {
 	private:
 		GLuint tsdf_tex;
+		GLuint weight_tex;
 
 		void Init();
 
@@ -21,6 +22,7 @@ class GLModel: public Model
 		void CopyFrom(CPUModel *cpu_model);
 
 		GLuint GetTSDFTex()	{ return tsdf_tex; }
+		GLuint GetWeightTex() { return weight_tex; }
 };
 
 #endif //_GL_MODEL_H
