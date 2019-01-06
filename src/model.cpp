@@ -91,6 +91,12 @@ void CPUModel::Init()
 {
 	tsdf = new float[resolutionX*resolutionY*resolutionZ];
 	weigths = new float[resolutionX*resolutionY*resolutionZ];
+
+	for (int x = 0; x < resolutionX*resolutionY*resolutionZ; x++)
+	{
+		tsdf[x] = -INFINITY;
+		weigths[x] = 1;
+	}
 	// init with -inf missing here
 }
 
