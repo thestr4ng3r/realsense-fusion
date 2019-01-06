@@ -18,6 +18,7 @@ class RealSenseInput : public Input
 		RealSenseInput();
 		~RealSenseInput();
 
+		rs2_intrinsics intrinsics;
 		bool WaitForFrame(Frame *frame) override;
 };
 

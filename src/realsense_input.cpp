@@ -10,6 +10,7 @@ RealSenseInput::RealSenseInput()
 	try
 	{
 		pipe.start();
+		intrinsics = pipe.get_active_profile().get_stream(RS2_STREAM_COLOR).as<rs2::video_stream_profile>().get_intrinsics();
 	}
 	catch(const rs2::error &e)
 	{
@@ -36,10 +37,6 @@ bool RealSenseInput::WaitForFrame(Frame *frame)
 			return false;
 		}
 		frame->SetDepthMap(depth.get_width(), depth.get_height(), (GLushort *)depth.get_data());
-		//frame->depthResolutionX = depth.get_width();
-		//frame->depthResolutionY = depth.get_height();
-		//frame->SetDepthMap((float*)depth.get_data());  //Have to see if that works
-		//points = pc.calculate(depth);
 	}
 	catch(const rs2::error &e)
 	{
