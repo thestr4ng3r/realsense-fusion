@@ -62,22 +62,27 @@ GLuint PC_Integrator::genComputeProg()
 		void main() {
 			ivec3 xyz = ivec(gl_globalInvocationID.xyz);
 			
-			float x_field = float(x) - resolution.x / 2.0f) * cellSize;
-			float y_field = float(y) - resolution.y / 2.0f) * cellSize;
-			float z_field = float(z) - resolution.z / 2.0f) * cellSize;
+			float x_cell = float(x) - resolution.x / 2.0f) * cellSize;
+			float y_cell = float(y) - resolution.y / 2.0f) * cellSize;
+			float z_cell = float(z) - resolution.z / 2.0f) * cellSize;
 
 			//shift into cell center
-			x_field += cellSize / 2.0f;
-			y_field += cellSize / 2.0f;
-			z_field += cellSize / 2.0f;
+			x_cell += cellSize / 2.0f;
+			y_cell += cellSize / 2.0f;
+			z_cell += cellSize / 2.0f;
 
-			v_g = vec3(x_field, y_field, z_field);
+			vec4 v_g = vec3(x_cell, y_cell, z_cell, 1.0f);
 
-			v = transpose_inv * v_g;
+			vec4 v = transpose_inv * v_g;
 
 			vec2 p = vec2(v.x/v.z * intrinsic_focalLength.x + intrinsic_center.x , v.y/v.z * intrinsic_focalLength.y + intrinsic_center.y );
 
-			//ToDo: discard p if v not in frustrum 
+			discard p if v not in frustrum 
+			vec4 v_hc = mvp_matrix * v;
+			if( abs(v_hc.x) > 1 || abs(v_hc.y) > 1 || abs(v_hc.z) > 1 )
+			{
+					return;
+			}
 
 			float sdf = distance( cam_pos - v_g ) - texture2D(depth_map, p) ;
 
@@ -95,8 +100,8 @@ GLuint PC_Integrator::genComputeProg()
 			float w_last = imageLoad(weight_tex, xyz) ; 
 			float tsdf_last = imageLoad(tsdf_tex, xyz);
 
-			max_weight = 1.0 / 0.0;
-			w_now = min (max_weight , w_last +1); //  ??
+			max_weight = 1.0 / 0.0;   //  = inf 
+			w_now = min (max_weight , w_last +1); 
 			
 			float tsdf_avg = ( tsdf_last * w_last + tsdf * w_now ) / w_now;
 
