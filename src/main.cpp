@@ -7,13 +7,15 @@
 
 #include "frame.h"
 
+#include "window.h"
+
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/filters/passthrough.h>
 
-#include <stdio.h>
-
 int main(int argc, char *argv[])
 {
+	Window window;
+
 	Input *input;
 
 #if defined(ENABLE_INPUT_REALSENSE)
@@ -28,7 +30,23 @@ int main(int argc, char *argv[])
 #endif
 
 	Frame frame;
-	pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+
+	while(!window.GetShouldTerminate())
+	{
+		window.Update();
+		window.BeginRender();
+		window.EndRender();
+
+		if(!input->WaitForFrame(&frame))
+		{
+			std::cerr << "Failed to get frame." << std::endl;
+			continue;
+		}
+	}
+
+	delete input;
+
+	/*pcl::PointCloud<pcl::PointXYZ>::Ptr filtered_cloud(new pcl::PointCloud<pcl::PointXYZ>);
 
 	pcl::visualization::CloudViewer cloud_viewer("Cloud Viewer");
 
@@ -43,7 +61,7 @@ int main(int argc, char *argv[])
 		z_filter.filter(*filtered_cloud);
 
 		cloud_viewer.showCloud(filtered_cloud);
-	}
+	}*/
 
 	return 0;
 }

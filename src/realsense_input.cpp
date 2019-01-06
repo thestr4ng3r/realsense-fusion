@@ -3,6 +3,8 @@
 #include "frame.h"
 #include "realsense_input.h"
 
+#include <iostream>
+
 RealSenseInput::RealSenseInput()
 {
 	try
@@ -22,18 +24,22 @@ RealSenseInput::~RealSenseInput()
 }
 
 
-void PointsToPCL(const rs2::points& points, pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud);
-
 bool RealSenseInput::WaitForFrame(Frame *frame)
 {
 	try
 	{
 		auto frames = pipe.wait_for_frames();
 		auto depth = frames.get_depth_frame();
-		frame->depthResolutionX = depth.get_width();
-		frame->depthResolutionY = depth.get_height();
-		frame->SetDepthMap((float*)depth.get_data());  //Have to see if that works
-		points = pc.calculate(depth);
+		if (depth.get_profile().stream_type() != RS2_STREAM_DEPTH || depth.get_profile().format() != RS2_FORMAT_Z16)
+		{
+			std::cerr << "Frame from RealSense has invalid stream type or format." << std::endl;
+			return false;
+		}
+		frame->SetDepthMap(depth.get_width(), depth.get_height(), (GLushort *)depth.get_data());
+		//frame->depthResolutionX = depth.get_width();
+		//frame->depthResolutionY = depth.get_height();
+		//frame->SetDepthMap((float*)depth.get_data());  //Have to see if that works
+		//points = pc.calculate(depth);
 	}
 	catch(const rs2::error &e)
 	{
@@ -47,13 +53,15 @@ bool RealSenseInput::WaitForFrame(Frame *frame)
 		color = frames.get_infrared_frame();
 	pc.map_to(color);*/
 
-	auto cloud = frame->GetCloud();
-	PointsToPCL(points, cloud);
+	//auto cloud = frame->GetCloud();
+	//PointsToPCL(points, cloud);
 
 
 	return true;
 }
 
+
+/*void PointsToPCL(const rs2::points& points, pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud);
 void PointsToPCL(const rs2::points& points, pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud)
 {
 	auto sp = points.get_profile().as<rs2::video_stream_profile>();
@@ -69,6 +77,6 @@ void PointsToPCL(const rs2::points& points, pcl::PointCloud<pcl::PointXYZ>::Ptr 
 		p.z = -ptr->z;
 		ptr++;
 	}
-}
+}*/
 
 #endif

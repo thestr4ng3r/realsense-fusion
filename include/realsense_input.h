@@ -11,8 +11,8 @@ class RealSenseInput : public Input
 {
 	private:
 		rs2::pipeline pipe;
-		rs2::pointcloud pc;
-		rs2::points points;
+		//rs2::pointcloud pc;
+		//rs2::points points;
 
 	public:
 		RealSenseInput();
