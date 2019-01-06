@@ -92,9 +92,16 @@ GLuint PC_Integrator::genComputeProg()
 				float tsdf = max(-1, sdf/ -0.000001);
 			}		
 
-			// TODO Implement Weighting
+			float w_last = imageLoad(weight_tex, xyz) ; 
+			float tsdf_last = imageLoad(tsdf_tex, xyz);
 
-			imageStore(tsdf_tex, ivec, tsdf);
+			max_weight = 1.0 / 0.0;
+			w_now = min (max_weight , w_last +1); //  ??
+			
+			float tsdf_avg = ( tsdf_last * w_last + tsdf * w_now ) / w_now;
+
+			imageStore(tsdf_tex, xyz, tsdf_avg);
+			imageStore(weight_tex, xyz, w_now);
 		}		
 	    )glsl";
 
