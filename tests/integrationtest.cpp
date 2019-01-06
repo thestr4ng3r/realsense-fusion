@@ -7,7 +7,7 @@
 #include "frame.h"
 
 #include "window.h"
-//#include "renderer.h"
+#include "renderer.h"
 #include "gl_model.h"
 #include "pc_integrator.h"
 
@@ -49,7 +49,12 @@ int main(int argc, char *argv[])
 		PC_Integrator integrator (&glmodel);
 		integrator.integrate(&frame);
 
+		Renderer renderer(&window);
+		renderer.Render(&glmodel);
+
 	}
+
+	system("pause");
 
 	delete input;
 	return 0;
