@@ -156,13 +156,13 @@ GLuint PC_Integrator::genComputeProg()
 	return progHandle;
 }
 
-void PC_Integrator::integrate(Frame &frame)
+void PC_Integrator::integrate(Frame* frame)
 {
 	// TODO : // Access Depth Image from Camera Input class
-	int depthResX = frame.GetDepthWidth();
-	int depthResY = frame.GetDepthHeight();
+	int depthResX = frame->GetDepthWidth();
+	int depthResY = frame->GetDepthHeight();
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, frame.GetDepthTex());
+	glBindTexture(GL_TEXTURE_2D, frame->GetDepthTex());
 
 	// TODO DELOCALIZE CAM POS & PROJECT MATRIX OUT OF PC_INTEGRATOR || Check if MVP matrix is correct
 	Eigen::Vector3f cam_pos(0.0f, 0.0f, 3.0f);

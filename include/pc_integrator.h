@@ -39,7 +39,7 @@ class PC_Integrator
 		PC_Integrator(GLModel* glModel);
 		~PC_Integrator();
 		
-		void integrate(Frame &frame);
+		void integrate(Frame* frame);
 };
 
 #endif //_PC_INTEGRATOR_H
