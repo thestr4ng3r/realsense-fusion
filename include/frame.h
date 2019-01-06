@@ -13,9 +13,15 @@ class Frame
 	private:
 		//pcl::PointCloud<pcl::PointXYZ>::Ptr cloud;
 		GLuint depth_tex;
+		GLuint vertex_tex;
+		GLuint normal_tex;
 
 		int depth_width;
 		int depth_height;
+		float depth_scale;
+
+		GLuint process_program;
+		GLint depth_scale_uniform;
 
 	public:
 		Frame();
@@ -25,10 +31,12 @@ class Frame
 		//float* GetDepthMap() { return depthMap;  }
 		//void SetDepthMap(float* depthmap) { this->depthMap = depthMap; }
 
-		void SetDepthMap(int width, int height, GLushort *data);
+		void SetDepthMap(int width, int height, GLushort *data, float depth_scale);
 		GLuint GetDepthTex()	{ return depth_tex; }
 		int GetDepthWidth()		{ return depth_width; }
 		int GetDepthHeight()	{ return depth_height; }
+
+		void ProcessFrame();
 };
 
 #endif //_FRAME_H

@@ -42,6 +42,7 @@ int main(int argc, char *argv[])
 			std::cerr << "Failed to get frame." << std::endl;
 			continue;
 		}
+		frame.ProcessFrame();
 	}
 
 	delete input;

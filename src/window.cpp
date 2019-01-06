@@ -4,6 +4,11 @@
 #include <stdexcept>
 #include <window.h>
 
+// https://www.khronos.org/opengl/wiki/Debug_Output#Examples
+void GLAPIENTRY GLMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *user)
+{
+	fprintf(stderr, "GL: %s type = %#x, severity = %#x, message = %s\n", (type == GL_DEBUG_TYPE_ERROR ? "ERROR" : ""), type, severity, message);
+}
 
 Window::Window()
 {
@@ -23,6 +28,9 @@ Window::Window()
 
 	glfwMakeContextCurrent(window);
 	glewInit();
+
+	glEnable(GL_DEBUG_OUTPUT);
+	glDebugMessageCallback(GLMessageCallback, nullptr);
 
 	should_terminate = false;
 }

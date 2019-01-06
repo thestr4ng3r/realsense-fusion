@@ -14,6 +14,8 @@ class RealSenseInput : public Input
 		//rs2::pointcloud pc;
 		//rs2::points points;
 
+		float depth_scale;
+
 	public:
 		RealSenseInput();
 		~RealSenseInput();
