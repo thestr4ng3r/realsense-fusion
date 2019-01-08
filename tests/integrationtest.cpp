@@ -25,33 +25,36 @@ int main(int argc, char *argv[])
 #error "Build with no input!"
 #endif
 
-	Frame frame;
 	Window window;
+	Frame frame;
+
+	bool integrated = false;
+	GLModel glmodel(1024, 1024, 1024, 0.1);
+	CPUModel cpu_model(1024, 1024, 1024, 0.1);
+	glmodel.CopyFrom(&cpu_model);
+	PC_Integrator integrator (&glmodel);
+
+	Renderer renderer(&window);
 
 	while (!window.GetShouldTerminate())
 	{
 		window.Update();
-		window.BeginRender();
-		window.EndRender();
 
 		if (!input->WaitForFrame(&frame))
 		{
 			std::cerr << "Failed to get frame." << std::endl;
 			continue;
 		}
-		else {
-			break; //first frame ready for computing
+
+		if (!integrated)
+		{
+			integrator.integrate(&frame);
+			integrated = true;
 		}
 
-		GLModel glmodel (1024, 1024, 1024, 0.1);
-		glmodel.CopyFrom(&CPUModel(1024, 1024, 1024, 0.1));
-
-		PC_Integrator integrator (&glmodel);
-		integrator.integrate(&frame);
-
-		Renderer renderer(&window);
+		window.BeginRender();
 		renderer.Render(&glmodel);
-
+		window.EndRender();
 	}
 
 	system("pause");

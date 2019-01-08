@@ -195,7 +195,7 @@ void PC_Integrator::integrate(Frame* frame)
 	glBindImageTexture(1, glModel->GetWeightTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
 
 	//todo loop over slide
-	glDispatchCompute(resolutionX*resolutionY, resolutionX*resolutionY, 1);
+	glDispatchCompute(resolutionX, resolutionY, resolutionZ);
 
 }
 
