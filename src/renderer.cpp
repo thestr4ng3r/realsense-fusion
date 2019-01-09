@@ -208,6 +208,7 @@ void Renderer::InitResources()
 	cam_pos_uniform = glGetUniformLocation(program, "cam_pos");
 	tsdf_tex_uniform = glGetUniformLocation(program, "tsdf_tex");
 
+	glUseProgram(program);
 	glUniform1i(tsdf_tex_uniform, 0);
 }
 

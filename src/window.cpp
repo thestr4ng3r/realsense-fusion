@@ -11,7 +11,23 @@
 // https://www.khronos.org/opengl/wiki/Debug_Output#Examples
 void GLAPIENTRY GLMessageCallback(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *user)
 {
-	fprintf(stderr, "GL: %s type = %#x, severity = %#x, message = %s\n", (type == GL_DEBUG_TYPE_ERROR ? "ERROR" : ""), type, severity, message);
+	const char *type_str;
+	switch(type)
+	{
+		case GL_DEBUG_TYPE_ERROR:
+			type_str = "Error";
+			break;
+		case GL_DEBUG_TYPE_PERFORMANCE:
+			type_str = "Perf";
+			break;
+		case GL_DEBUG_TYPE_OTHER:
+			type_str = "Other";
+			break;
+		default:
+			type_str = "???";
+			break;
+	}
+	fprintf(stderr, "GL: %s type = %#x, severity = %#x, message = %s\n", type_str, type, severity, message);
 }
 
 Window::Window(const char *title)

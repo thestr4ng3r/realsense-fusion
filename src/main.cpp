@@ -8,6 +8,8 @@
 #include "frame.h"
 
 #include "window.h"
+#include "gl_model.h"
+#include "renderer.h"
 
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/filters/passthrough.h>
@@ -33,6 +35,19 @@ int main(int argc, char *argv[])
 
 	Frame frame;
 
+	GLModel gl_model(128, 128, 128, 1.0f / 128.0f);
+	{
+		CPUModel test_model(
+				gl_model.GetResolutionX(),
+				gl_model.GetResolutionY(),
+				gl_model.GetResolutionZ(),
+				gl_model.GetCellSize());
+		test_model.GenerateSphere(0.3f, Eigen::Vector3f(0.0f, 0.0f, 0.0f));
+		gl_model.CopyFrom(&test_model);
+	}
+
+	Renderer renderer(&window);
+
 	while(!window.GetShouldTerminate())
 	{
 		window.Update();
@@ -53,6 +68,7 @@ int main(int argc, char *argv[])
 		window.EndGUI();
 
 		window.BeginRender();
+		renderer.Render(&gl_model);
 		window.EndRender();
 	}
 
