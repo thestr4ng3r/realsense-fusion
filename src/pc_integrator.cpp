@@ -44,8 +44,8 @@ GLuint PC_Integrator::genComputeProg()
 		R"glsl(
 		#version 450 core
 
-		layout(rgba32f, binding = 0) uniform image3D  tsdf_tex;
-		layout(rgba32f, binding = 1) uniform image3D  weight_tex;
+		layout(r32f, binding = 0) uniform image3D  tsdf_tex;
+		layout(r32f, binding = 1) uniform image3D  weight_tex;
 		layout(binding = 0) uniform sampler2D depth_map;
 
 		uniform vec2 intrinsic_focalLength;
@@ -80,12 +80,12 @@ GLuint PC_Integrator::genComputeProg()
 			vec4 v_hc = mvp_matrix * v;
 			if( abs(v_hc.x) > 1 || abs(v_hc.y) > 1 || abs(v_hc.z) > 1 )
 			{
-					return;
+					//return;
 			}
 
 			float sdf = distance( vec4(cam_pos,1) , v_g) - texture2D(depth_map, p).x ;
 
-			float tsdf;
+			float tsdf = clamp(sdf, -max_dist, max_dist);
 
 			if (sdf > 0)
 			{
@@ -187,9 +187,6 @@ void PC_Integrator::integrate(Frame* frame)
 	glUniform3fv(cam_pos_uniform, 1, cam_pos.data());
 	glUniformMatrix4fv(transposeInv_uniform, 1, GL_FALSE, transpose.data());
 	glBindImageTexture(0, glModel->GetTSDFTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, depth_map_uniform);
-	glActiveTexture(GL_TEXTURE1);
 	glBindImageTexture(1, glModel->GetWeightTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
 
 	//todo loop over slide

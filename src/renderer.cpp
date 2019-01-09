@@ -123,9 +123,6 @@ void main()
 }
 )glsl";
 
-struct RendererInternal
-{
-};
 
 Renderer::Renderer(Window *window)
 {

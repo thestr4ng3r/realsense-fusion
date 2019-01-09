@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
 #error "Build with no input!"
 #endif
 
-	Window window;
+	Window window("Integration Test");
 	Frame frame;
 
 	bool integrated = false;
@@ -47,11 +47,11 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
-		if (!integrated)
-		{
+		/*if (!integrated)
+		{*/
 			integrator.integrate(&frame);
 			integrated = true;
-		}
+		//}
 
 		window.BeginRender();
 		renderer.Render(&glmodel);

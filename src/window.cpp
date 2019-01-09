@@ -94,7 +94,9 @@ void Window::BeginRender()
 
 void Window::EndRender()
 {
-	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+	auto imgui_data = ImGui::GetDrawData();
+	if(imgui_data)
+		ImGui_ImplOpenGL3_RenderDrawData(imgui_data);
 	glfwSwapBuffers(window);
 }
 
