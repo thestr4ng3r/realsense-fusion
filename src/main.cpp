@@ -12,9 +12,11 @@
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/filters/passthrough.h>
 
+#include "imgui.h"
+
 int main(int argc, char *argv[])
 {
-	Window window;
+	Window window("Scanner");
 
 	Input *input;
 
@@ -34,8 +36,6 @@ int main(int argc, char *argv[])
 	while(!window.GetShouldTerminate())
 	{
 		window.Update();
-		window.BeginRender();
-		window.EndRender();
 
 		if(!input->WaitForFrame(&frame))
 		{
@@ -43,6 +43,17 @@ int main(int argc, char *argv[])
 			continue;
 		}
 		frame.ProcessFrame();
+
+		window.BeginGUI();
+		ImGui::Begin("Hello");
+		ImGui::Text("This scanner is cool.");
+		if(ImGui::Button("click me"))
+			std::cout << "clicked" << std::endl;
+		ImGui::End();
+		window.EndGUI();
+
+		window.BeginRender();
+		window.EndRender();
 	}
 
 	delete input;

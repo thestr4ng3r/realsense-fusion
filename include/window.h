@@ -5,6 +5,8 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#define GLSL_VERSION "#version 450"
+
 class Window
 {
 	private:
@@ -12,7 +14,7 @@ class Window
 		bool should_terminate;
 
 	public:
-		Window();
+		Window(const char *title);
 		~Window();
 
 		void GetSize(int *width, int *height)	{ glfwGetFramebufferSize(window, width, height); }
@@ -21,6 +23,8 @@ class Window
 		void Update();
 		void BeginRender();
 		void EndRender();
+		void BeginGUI();
+		void EndGUI();
 };
 
 #endif //_WINDOW_H

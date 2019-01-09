@@ -64,6 +64,7 @@ include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
+add_definitions(-DIMGUI_IMPL_OPENGL_LOADER_GLEW)
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/third-party/imgui")
 
 add_executable(scanner ${SOURCE_FILES} ${HEADER_FILES} ${SOURCE_FILE_MAIN} ${IMGUI_SOURCE_FILES})
@@ -73,11 +74,11 @@ target_link_libraries(scanner ${PCL_LIBRARIES} ${OPENGL_LIBRARIES} ${GLEW_LIBRAR
 add_executable(modeltest ${MODEL_TEST_FILES})
 target_link_libraries(modeltest ${PCL_LIBRARIES})
 
-add_executable(renderertest ${SOURCE_FILES} ${HEADER_FILES} tests/renderertest.cpp)
-target_link_libraries(renderertest ${PCL_LIBRARIES} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} glfw ${IMGUI_SOURCE_FILES})
+add_executable(renderertest ${SOURCE_FILES} ${HEADER_FILES} tests/renderertest.cpp ${IMGUI_SOURCE_FILES})
+target_link_libraries(renderertest ${PCL_LIBRARIES} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} glfw)
 
-add_executable(integrationtest ${SOURCE_FILES} ${HEADER_FILES} tests/integrationtest.cpp)
-target_link_libraries(integrationtest ${PCL_LIBRARIES} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} glfw ${IMGUI_SOURCE_FILES})
+add_executable(integrationtest ${SOURCE_FILES} ${HEADER_FILES} tests/integrationtest.cpp ${IMGUI_SOURCE_FILES})
+target_link_libraries(integrationtest ${PCL_LIBRARIES} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} glfw)
 
 
 

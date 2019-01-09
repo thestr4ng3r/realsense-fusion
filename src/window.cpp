@@ -1,4 +1,8 @@
 
+#include "imgui.h"
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
+
 #include "window.h"
 
 #include <stdexcept>
@@ -10,7 +14,7 @@ void GLAPIENTRY GLMessageCallback(GLenum source, GLenum type, GLuint id, GLenum 
 	fprintf(stderr, "GL: %s type = %#x, severity = %#x, message = %s\n", (type == GL_DEBUG_TYPE_ERROR ? "ERROR" : ""), type, severity, message);
 }
 
-Window::Window()
+Window::Window(const char *title)
 {
 	if(!glfwInit())
 		throw std::runtime_error("Failed to initialize GLFW.");
@@ -18,7 +22,7 @@ Window::Window()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	window = glfwCreateWindow(640, 480, "Renderer", nullptr, nullptr);
+	window = glfwCreateWindow(640, 480, title, nullptr, nullptr);
 
 	if(!window)
 	{
@@ -32,11 +36,24 @@ Window::Window()
 	glEnable(GL_DEBUG_OUTPUT);
 	glDebugMessageCallback(GLMessageCallback, nullptr);
 
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO &imgui_io = ImGui::GetIO();
+
+	ImGui::StyleColorsDark();
+
+	ImGui_ImplGlfw_InitForOpenGL(window, true);
+	ImGui_ImplOpenGL3_Init(GLSL_VERSION);
+
+
 	should_terminate = false;
 }
 
 Window::~Window()
 {
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
 	glfwDestroyWindow(window);
 	glfwTerminate();
 }
@@ -61,5 +78,19 @@ void Window::BeginRender()
 
 void Window::EndRender()
 {
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	glfwSwapBuffers(window);
 }
+
+void Window::BeginGUI()
+{
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+}
+
+void Window::EndGUI()
+{
+	ImGui::Render();
+}
+
