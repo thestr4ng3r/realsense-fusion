@@ -29,8 +29,9 @@ int main(int argc, char *argv[])
 	Frame frame;
 
 	bool integrated = false;
-	GLModel glmodel(1024, 1024, 1024, 0.1);
-	CPUModel cpu_model(1024, 1024, 1024, 0.1);
+	
+	CPUModel cpu_model(512, 512, 512, 0.1);
+	GLModel glmodel(512, 512, 512, 0.1);
 	glmodel.CopyFrom(&cpu_model);
 	PC_Integrator integrator (&glmodel);
 

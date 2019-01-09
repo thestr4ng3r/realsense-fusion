@@ -44,9 +44,9 @@ GLuint PC_Integrator::genComputeProg()
 		R"glsl(
 		#version 450 core
 
-		uniform image3D  tsdf_tex;
-		uniform image3D  weight_tex;
-		uniform sampler2D depth_map
+		layout(rgba32f, binding = 0) uniform image3D  tsdf_tex;
+		layout(rgba32f, binding = 1) uniform image3D  weight_tex;
+		layout(binding = 0) uniform sampler2D depth_map;
 
 		uniform vec2 intrinsic_focalLength;
 		uniform vec2 intrinsic_center;
@@ -60,58 +60,56 @@ GLuint PC_Integrator::genComputeProg()
 
 		layout (local_size_x = 1, local_size_y = 1, local_size_z=1) in;
 		void main() {
-			ivec3 xyz = ivec(gl_globalInvocationID.xyz);
+			ivec3 xyz = ivec3(gl_GlobalInvocationID.xyz);
 			
-			float x_cell = float(x) - resolution.x / 2.0f) * cellSize;
-			float y_cell = float(y) - resolution.y / 2.0f) * cellSize;
-			float z_cell = float(z) - resolution.z / 2.0f) * cellSize;
+			float x_cell = (float(xyz.x) - resolution.x / 2.0f) * cellSize;
+			float y_cell = (float(xyz.y) - resolution.y / 2.0f) * cellSize;
+			float z_cell = (float(xyz.z) - resolution.z / 2.0f) * cellSize;
 
 			//shift into cell center
 			x_cell += cellSize / 2.0f;
 			y_cell += cellSize / 2.0f;
 			z_cell += cellSize / 2.0f;
 
-			vec4 v_g = vec3(x_cell, y_cell, z_cell, 1.0f);
+			vec4 v_g = vec4(x_cell, y_cell, z_cell, 1.0f);
 
 			vec4 v = transpose_inv * v_g;
 
 			vec2 p = vec2(v.x/v.z * intrinsic_focalLength.x + intrinsic_center.x , v.y/v.z * intrinsic_focalLength.y + intrinsic_center.y );
 
-			discard p if v not in frustrum 
 			vec4 v_hc = mvp_matrix * v;
 			if( abs(v_hc.x) > 1 || abs(v_hc.y) > 1 || abs(v_hc.z) > 1 )
 			{
 					return;
 			}
 
-			float sdf = distance( cam_pos - v_g ) - texture2D(depth_map, p) ;
+			float sdf = distance( vec4(cam_pos,1) , v_g) - texture2D(depth_map, p).x ;
 
 			float tsdf;
 
 			if (sdf > 0)
 			{
-				float tsdf = min(1, sdf / 0.000001);
+				float tsdf = min(1.0f, sdf / 0.000001);
 			}
 			else 
 			{
-				float tsdf = max(-1, sdf/ -0.000001);
+				float tsdf = max(-1.0f, sdf/ -0.000001);
 			}		
 
-			float w_last = imageLoad(weight_tex, xyz) ; 
-			float tsdf_last = imageLoad(tsdf_tex, xyz);
+			float w_last = imageLoad(weight_tex, xyz).x ; 
+			float tsdf_last = imageLoad(tsdf_tex, xyz).x;
 
-			max_weight = 1.0 / 0.0;   //  = inf 
-			w_now = min (max_weight , w_last +1); 
+			float max_weight = 1.0 / 0.0;   //  = inf 
+			float w_now = min (max_weight , w_last +1); 
 			
 			float tsdf_avg = ( tsdf_last * w_last + tsdf * w_now ) / w_now;
 
-			imageStore(tsdf_tex, xyz, tsdf_avg);
-			imageStore(weight_tex, xyz, w_now);
+			imageStore(tsdf_tex, xyz, vec4(tsdf_avg,0.0,0.0,0.0));
+			imageStore(weight_tex, xyz, vec4(w_now,0.0,0.0,0.0));
 		}		
 	    )glsl";
 
-
-	glShaderSource(cs, 2, &csSrc, NULL);
+	glShaderSource(cs, 1, &csSrc, NULL);
 	glCompileShader(cs);
 	int rvalue;
 	glGetShaderiv(cs, GL_COMPILE_STATUS, &rvalue);
