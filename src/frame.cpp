@@ -3,8 +3,10 @@
 #include "shader_common.h"
 
 static const char *process_shader_code =
+"#version 450 core\n"
+#include "glsl_common_depth.inl"
 R"glsl(
-#version 450 core
+
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
 uniform float depth_scale;
@@ -17,8 +19,7 @@ layout(rgba32f, binding = 1) uniform image2D normal_out;
 void main()
 {
 	ivec2 coords = ivec2(gl_GlobalInvocationID.xy);
-	uint depth_raw = texelFetch(depth_tex, coords, 0).r;
-	float depth = float(depth_raw) * depth_scale;
+	float depth = ReadDepth(depth_tex, coords, depth_scale);
 	imageStore(vertex_out, coords, vec4(depth, 0.0, 0.0, 0.0));
 	imageStore(normal_out, coords, vec4(0.0, 0.0, 1.0, 0.0));
 }
