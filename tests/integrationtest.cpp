@@ -30,9 +30,26 @@ int main(int argc, char *argv[])
 
 	bool integrated = false;
 	
-	CPUModel cpu_model(512, 512, 512, 0.01);
-	GLModel glmodel(512, 512, 512, 0.01);
+	/*
+	CPUModel cpu_model(512, 512, 512, 1.0f/512.f);
+	//cpu_model.GenerateSphere(0.25, Eigen::Vector3f(0.0, 0.0, 0.0));
+	cpu_model.DebugToLog();
+	GLModel glmodel(512, 512, 512, 1.0f / 512.f);
 	glmodel.CopyFrom(&cpu_model);
+	*/
+
+	CPUModel cpu_model (128, 128, 128, 1.0f / 128.0f);
+	cpu_model.GenerateSphere(0.3f, Eigen::Vector3f(0.0f, 0.0f, 0.0f));
+
+	GLModel glmodel(
+		cpu_model.GetResolutionX(),
+		cpu_model.GetResolutionY(),
+		cpu_model.GetResolutionZ(),
+		cpu_model.GetCellSize(),
+		cpu_model.GetModelOrigin());
+
+	glmodel.CopyFrom(&cpu_model);
+
 	PC_Integrator integrator (&glmodel, input);
 
 	Renderer renderer(&window);

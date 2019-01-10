@@ -80,12 +80,16 @@ GLuint PC_Integrator::genComputeProg()
 			vec2 p = vec2(v.x/v.z * intrinsic_focalLength.x + intrinsic_center.x , v.y/v.z * intrinsic_focalLength.y + intrinsic_center.y );
 
 			vec4 v_hc = mvp_matrix * v;
-			if( abs(v.x) > 1 || abs(v.y) > 1 || abs(v.z) > 1 )
+			if( abs(v.x) > 1 || abs(v.y) > 1 )
 			{
 					//return;
 			}
+			if( v.z < 0.00001f ) //behind near plane
+			{
+				return;
+			}
 
-			float sdf = distance( vec4(cam_pos,1) , v_g) - float(texture2D(depth_map, p).x) ;
+			float sdf = distance( vec4(cam_pos,1) , v_g) - texture2D(depth_map, p).x ;
 
 			//float tsdf = clamp(sdf, -max_dist, max_dist);
 
@@ -106,9 +110,9 @@ GLuint PC_Integrator::genComputeProg()
 			float max_weight = 1.0 / 0.0;   //  = inf 
 			float w_now = min (max_weight , w_last +1); 
 			
-			float tsdf_avg = ( tsdf_last * w_last + tsdf * w_now ) / w_now;
+			float tsdf_avg = ( tsdf_last * w_last + tsdf * w_now ) / w_now + w_last;
 
-			imageStore(tsdf_tex, xyz, vec4(tsdf_avg *-1,0.0,0.0,0.0));
+			imageStore(tsdf_tex, xyz, vec4(tsdf,0.0,0.0,0.0));
 			imageStore(weight_tex, xyz, vec4(w_now,0.0,0.0,0.0));
 		}		
 	    )glsl";
@@ -170,7 +174,7 @@ void PC_Integrator::integrate(Frame* frame)
 	Eigen::Vector3f cam_pos(0.0f, 0.0f, 3.0f);
 
 	Eigen::Affine3f modelview = Eigen::Affine3f::Identity();
-	modelview.translate(cam_pos);
+	modelview.translate(-cam_pos);
 	//modelview.rotate(Eigen::AngleAxisf(0.25f * M_PI, Eigen::Vector3f::UnitX()));
 
 	Eigen::Matrix4f mvp_matrix;
@@ -178,7 +182,7 @@ void PC_Integrator::integrate(Frame* frame)
 
 	Eigen::Matrix4f transpose;   //ToDo Integrate Frame transpose here
 	transpose = Eigen::Matrix4f::Identity();
-	transpose = modelview.matrix();
+	//transpose = modelview.matrix();
 
 	glUseProgram(this->computeHandle);
 
