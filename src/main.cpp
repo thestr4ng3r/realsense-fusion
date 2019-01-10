@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
 				gl_model.GetResolutionY(),
 				gl_model.GetResolutionZ(),
 				gl_model.GetCellSize());
-		test_model.GenerateSphere(0.3f, Eigen::Vector3f(0.0f, 0.0f, 0.0f));
+		test_model.GenerateSphere(0.45f, Eigen::Vector3f(0.0f, 0.0f, 0.0f));
 		gl_model.CopyFrom(&test_model);
 	}
 

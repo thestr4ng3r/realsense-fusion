@@ -19,6 +19,11 @@ class Model
 		float GetCellSize()					{ return cellSize; }
 		Eigen::Vector3f GetModelOrigin()	{ return modelOrigin; }
 
+		Eigen::Vector3f GridToWorld(Eigen::Vector3f pos);
+		Eigen::Vector3f WorldToGrid(Eigen::Vector3f pos);
+		Eigen::Vector3i GridToTexel(Eigen::Vector3f pos);
+		Eigen::Vector3f TexelToGrid(Eigen::Vector3i pos);
+
 	private:
 		void Init(int resolutionX, int resolutionY, int resolutionZ, float cellSize);
 
@@ -30,8 +35,6 @@ class Model
 		float cellSize;
 
 		Eigen::Vector3f modelOrigin;
-
-		void ApproximateModelPosition(int x, int y, int z, Eigen::Vector3f &pos);
 };
 
 class CPUModel: public Model

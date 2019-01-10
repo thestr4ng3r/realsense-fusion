@@ -47,25 +47,31 @@ Model::~Model()
 }
 
 
-//approximate center of sdf field by cell center and cell length
-void Model::ApproximateModelPosition(int x, int y, int z, Eigen::Vector3f &pos)
-{
-	//scale in Model Space
-	float x_field = (static_cast<float>(x) - resolutionX / 2.0f) * cellSize;
-	float y_field = (static_cast<float>(y) - resolutionY / 2.0f) * cellSize;
-	float z_field = (static_cast<float>(z) - resolutionZ / 2.0f) * cellSize;
+// these must be exactly the same as in glsl_common_grid.inl
 
-	//shift into cell center
-	x_field += cellSize / 2.0f;
-	y_field += cellSize / 2.0f;
-	z_field += cellSize / 2.0f;
-	
-	pos = Eigen::Vector3f(x_field, y_field, z_field);
+Eigen::Vector3f Model::GridToWorld(Eigen::Vector3f pos)
+{
+	return pos.cwiseProduct(Eigen::Vector3f(resolutionX, resolutionY, resolutionZ)) * cellSize + modelOrigin;
+
 }
 
+Eigen::Vector3f Model::WorldToGrid(Eigen::Vector3f pos)
+{
+	return ((pos - modelOrigin) / cellSize).cwiseProduct(
+		Eigen::Vector3f(1.0f / (float)resolutionX, 1.0f / (float)resolutionY, 1.0f / (float)resolutionZ));
 
+}
 
+Eigen::Vector3i Model::GridToTexel(Eigen::Vector3f pos)
+{
+	return Eigen::Vector3f(resolutionX, resolutionY, resolutionZ).cwiseProduct(pos).cast<int>();
+}
 
+Eigen::Vector3f Model::TexelToGrid(Eigen::Vector3i pos)
+{
+	return pos.cast<float>().cwiseProduct(
+			Eigen::Vector3f(1.0f / (float)resolutionX, 1.0f / (float)resolutionY, 1.0f / (float)resolutionZ));
+}
 
 
 
@@ -110,12 +116,9 @@ void CPUModel::GenerateSphere(float radius, Eigen::Vector3f center)
 		{
 			for (int x = 0; x < resolutionX; x++)
 			{
-				Eigen::Vector3f pos;
-				ApproximateModelPosition(x, y, z, pos);
-//#ifdef DEBUG
-//				std::cout << "grid value : " << x << " " << y << " " << z << "in Modelspace : " << pos.x() << " " << pos.y() << " " << pos.z() << "\n";
-//#endif // DEBUG
-				float eval = sphere.sdf(pos.x(), pos.y(), pos.z());
+				Eigen::Vector3f grid_pos = TexelToGrid(Eigen::Vector3i(x, y, z));
+				Eigen::Vector3f world_pos = GridToWorld(grid_pos);
+				float eval = sphere.sdf(world_pos.x(), world_pos.y(), world_pos.z());
 				int cellIndex = IDX(x, y, z);
 				tsdf[cellIndex] = eval;
 			}

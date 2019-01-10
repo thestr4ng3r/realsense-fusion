@@ -11,6 +11,8 @@ class GLModel: public Model
 		GLuint tsdf_tex;
 		GLuint weight_tex;
 
+		GLuint params_buffer;
+
 		void Init();
 
 	public:
@@ -21,8 +23,9 @@ class GLModel: public Model
 
 		void CopyFrom(CPUModel *cpu_model);
 
-		GLuint GetTSDFTex()	{ return tsdf_tex; }
-		GLuint GetWeightTex() { return weight_tex; }
+		GLuint GetTSDFTex()			{ return tsdf_tex; }
+		GLuint GetWeightTex()		{ return weight_tex; }
+		GLuint GetParamsBuffer()	{ return params_buffer; }
 };
 
 #endif //_GL_MODEL_H

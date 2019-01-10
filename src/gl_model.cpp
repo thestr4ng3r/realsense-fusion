@@ -16,7 +16,9 @@ GLModel::GLModel(int resolutionX, int resolutionY, int resolutionZ, float cellSi
 
 GLModel::~GLModel()
 {
-
+	glDeleteTextures(1, &tsdf_tex);
+	glDeleteTextures(1, &weight_tex);
+	glDeleteBuffers(1, &params_buffer);
 }
 
 void GLModel::Init()
@@ -40,6 +42,20 @@ void GLModel::Init()
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 	glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, resolutionX, resolutionY, resolutionZ, 0, GL_RED, GL_FLOAT, nullptr);
+
+	// see glsl_common_grid.inl
+	glGenBuffers(1, &params_buffer);
+	glBindBuffer(GL_UNIFORM_BUFFER, params_buffer);
+	uint32_t buf[8];
+	buf[0] = static_cast<uint32_t>(resolutionX);
+	buf[1] = static_cast<uint32_t>(resolutionY);
+	buf[2] = static_cast<uint32_t>(resolutionZ);
+	*((float *)(buf + 3)) = cellSize;
+	*((float *)(buf + 4)) = modelOrigin.x();
+	*((float *)(buf + 5)) = modelOrigin.y();
+	*((float *)(buf + 6)) = modelOrigin.z();
+	buf[7] = 0;
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(buf), buf, GL_STATIC_DRAW);
 }
 
 void GLModel::CopyFrom(CPUModel *cpu_model)

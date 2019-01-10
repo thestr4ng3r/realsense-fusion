@@ -29,71 +29,67 @@ Eigen::Matrix<T, 4, 4> PerspectiveMatrix(T fovy, T aspect, T near_clip, T far_cl
 #define ATTRIBUTE_VERTEX_POS 0
 
 static const char *vertex_shader_code =
+"#version 450 core\n"
+#include "glsl_common_grid.inl"
 R"glsl(
-#version 450 core
 
 uniform mat4 mvp_matrix;
 uniform vec3 cam_pos;
 
 layout(location = 0) in vec3 vertex_pos;
 
-out vec3 grid_pos;
-out vec3 grid_dir;
-
-vec3 WorldToGrid(vec3 pos)
-{
-	return pos * 0.5 + 0.5;
-}
+out vec3 world_pos;
+out vec3 world_dir;
 
 void main()
 {
-	grid_pos = WorldToGrid(vertex_pos);
-	vec3 dir_from_cam = vertex_pos - cam_pos;
-	grid_dir = WorldToGrid(vertex_pos + normalize(dir_from_cam)) - grid_pos;
-	gl_Position = mvp_matrix * vec4(vertex_pos, 1.0);
+	world_pos = (vertex_pos * 0.5 + 0.5) * GridExtent() + grid_params.origin;
+	world_dir = world_pos - cam_pos;
+	gl_Position = mvp_matrix * vec4(world_pos, 1.0);
 }
 )glsl";
 
 static const char *fragment_shader_code =
+"#version 450 core\n"
+#include "glsl_common_grid.inl"
 R"glsl(
-#version 450 core
-
 uniform sampler3D tsdf_tex;
 
-in vec3 grid_pos;
-in vec3 grid_dir;
+in vec3 world_pos;
+in vec3 world_dir;
 
 out vec4 color_out;
 
-float SDF(vec3 pos)
+float SDF(vec3 grid_pos)
 {
-	return texture(tsdf_tex, pos).x;
+	return texture(tsdf_tex, grid_pos).x;
 }
 
-vec3 Normal(vec3 pos, float epsilon)
+vec3 Normal(vec3 world_pos, float epsilon)
 {
 	return normalize(vec3(
-		SDF(pos + vec3(epsilon, 0.0, 0.0)) - SDF(pos - vec3(epsilon, 0.0, 0.0)),
-		SDF(pos + vec3(0.0, epsilon, 0.0)) - SDF(pos - vec3(0.0, epsilon, 0.0)),
-		SDF(pos + vec3(0.0, 0.0, epsilon)) - SDF(pos - vec3(0.0, 0.0, epsilon))
+		SDF(WorldToGrid(world_pos + vec3(epsilon, 0.0, 0.0))) - SDF(WorldToGrid(world_pos - vec3(epsilon, 0.0, 0.0))),
+		SDF(WorldToGrid(world_pos + vec3(0.0, epsilon, 0.0))) - SDF(WorldToGrid(world_pos - vec3(0.0, epsilon, 0.0))),
+		SDF(WorldToGrid(world_pos + vec3(0.0, 0.0, epsilon))) - SDF(WorldToGrid(world_pos - vec3(0.0, 0.0, epsilon)))
 	));
 }
 
 #define STEP_MIN 0.01
 
-bool TraceRay(inout vec3 pos, vec3 dir)
+bool TraceRay(inout vec3 world_pos, vec3 world_dir)
 {
-	dir = normalize(dir);
-	pos += dir * 0.00001;
+	world_dir = normalize(world_dir);
+	world_pos += world_dir * 0.00001;
 
 	while(true)
 	{
-		if(pos.x < 0.0 || pos.x > 1.0 || pos.y < 0.0 || pos.y > 1.0 || pos.z < 0.0 || pos.z > 1.0)
+		vec3 grid_pos = WorldToGrid(world_pos);
+		if(grid_pos.x < 0.0 || grid_pos.x > 1.0 || grid_pos.y < 0.0 || grid_pos.y > 1.0 || grid_pos.z < 0.0 || grid_pos.z > 1.0)
 			return false;
-		float dist = SDF(pos);
-		if(dist <= 0.0)
+		float world_dist = SDF(grid_pos);
+		if(world_dist <= 0.0)
 			return true;
-		pos += dir * max(dist, STEP_MIN);
+		world_pos += world_dir * max(world_dist, STEP_MIN);
 	}
 }
 
@@ -111,10 +107,10 @@ float Phong(vec3 normal, vec3 light_dir, float specular, float exponent)
 
 void main()
 {
-	vec3 pos = grid_pos;
-	if(!TraceRay(pos, grid_dir))
+	vec3 world_pos_cur = world_pos;
+	if(!TraceRay(world_pos_cur, world_dir))
 		discard;
-	vec3 normal = Normal(pos, 0.001);
+	vec3 normal = Normal(world_pos_cur, 0.001);
 
 	float l = 0.1;
 	l += 0.5 * Phong(normal, normalize(vec3(1.0, 1.0, 1.0)), 0.5, 64.0);
@@ -228,6 +224,7 @@ void Renderer::Render(GLModel *model)
 	glUseProgram(program);
 	glUniformMatrix4fv(mvp_matrix_uniform, 1, GL_FALSE, mvp_matrix.data());
 	glUniform3fv(cam_pos_uniform, 1, cam_pos.data());
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, model->GetParamsBuffer());
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D, model->GetTSDFTex());
 	glBindVertexArray(vao);
