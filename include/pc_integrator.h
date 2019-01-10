@@ -5,6 +5,7 @@
 #include <GL/glew.h>
 #include "frame.h"
 #include "gl_model.h"
+#include "input.h"
 
 class GLModel;
 class Window;
@@ -32,11 +33,13 @@ class PC_Integrator
 		int resolutionZ;
 		float cellSize;
 
+		Input* input;
+
 		GLuint genComputeProg();
 		GLuint genTexture2D(int resolutionX, int resolutionY, float* data);
 
 	public:
-		PC_Integrator(GLModel* glModel);
+		PC_Integrator(GLModel* glModel, Input* input);
 		~PC_Integrator();
 		
 		void integrate(Frame* frame);

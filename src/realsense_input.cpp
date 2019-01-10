@@ -10,7 +10,7 @@ RealSenseInput::RealSenseInput()
 	try
 	{
 		auto profile = pipe.start();
-		intrinsics = profile.get_stream(RS2_STREAM_COLOR).as<rs2::video_stream_profile>().get_intrinsics();
+		intrinsics = profile.get_stream(RS2_STREAM_DEPTH).as<rs2::video_stream_profile>().get_intrinsics();
 		auto sensor = profile.get_device().first<rs2::depth_sensor>();
 		depth_scale = sensor.get_depth_scale();
 	}

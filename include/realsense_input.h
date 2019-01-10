@@ -22,6 +22,11 @@ class RealSenseInput : public Input
 
 		rs2_intrinsics intrinsics;
 		bool WaitForFrame(Frame *frame) override;
+
+		float GetPpx() { return intrinsics.ppx; }
+		float GetPpy() { return intrinsics.ppy; }
+		float GetFx() { return intrinsics.fx; }
+		float GetFy() { return intrinsics.fy; }
 };
 
 #endif //INPUT_H

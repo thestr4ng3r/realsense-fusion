@@ -20,13 +20,15 @@ Eigen::Matrix<T, 4, 4> PerspectiveMatrix(T fovy, T aspect, T near_clip, T far_cl
 }
 
 
-PC_Integrator::PC_Integrator(GLModel* glModel)
+PC_Integrator::PC_Integrator(GLModel* glModel, Input* input)
 {
 	this->glModel = glModel;
 
 	this->resolutionX = glModel->GetResolutionX();
 	this->resolutionY = glModel->GetResolutionY();
 	this->resolutionZ = glModel->GetResolutionZ();
+
+	this->input = input;
 
 	this->computeHandle = genComputeProg();
 }
@@ -156,7 +158,7 @@ GLuint PC_Integrator::genComputeProg()
 
 void PC_Integrator::integrate(Frame* frame)
 {
-	// TODO : // Access Depth Image from Camera Input class
+
 	int depthResX = frame->GetDepthWidth();
 	int depthResY = frame->GetDepthHeight();
 	glActiveTexture(GL_TEXTURE0);
@@ -179,8 +181,8 @@ void PC_Integrator::integrate(Frame* frame)
 
 	// UNIFORMS
 	// ToDo : Get Intrinsics
-	//glUniform2f(intrinsic_center, )
-	//glUniform2f(intrinsic_focalLength, )
+	glUniform2f(intrinsic_center_uniform, input->GetPpx(), input->GetPpy());
+	glUniform2f(intrinsic_focalLength_uniform, input->GetFx(), input->GetFy());
 	glUniform1f(cellSize_uniform, cellSize);
 	glUniform3f(resolution_uniform, resolutionX, resolutionY, resolutionZ);
 	glUniformMatrix4fv(mvp_matrix_uniform, 1, GL_FALSE, mvp_matrix.data());
