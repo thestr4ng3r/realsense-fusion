@@ -27,6 +27,7 @@ class PC_Integrator
 		GLuint weight_tex_uniform;
 		GLuint tsdf_tex_uniform;
 		GLuint transposeInv_uniform;
+		GLuint depth_scale_uniform;
 
 		int resolutionX;
 		int resolutionY;

@@ -43,8 +43,11 @@ GLuint PC_Integrator::genComputeProg()
 	GLuint cs = glCreateShader(GL_COMPUTE_SHADER);
 
 	static const char *csSrc = 
+		
+		"#version 450 core\n"
+		#include "glsl_common_grid.inl"
+		#include "glsl_common_depth.inl"
 		R"glsl(
-		#version 450 core
 
 		layout(r32f, binding = 0) uniform image3D  tsdf_tex;
 		layout(r32f, binding = 1) uniform image3D  weight_tex;
@@ -59,37 +62,30 @@ GLuint PC_Integrator::genComputeProg()
 
 		uniform vec3 resolution;
 		uniform float cellSize;
+		uniform float depth_scale;
 
 		layout (local_size_x = 1, local_size_y = 1, local_size_z=1) in;
 		void main() {
 			ivec3 xyz = ivec3(gl_GlobalInvocationID.xyz);
 			
-			float x_cell = (float(xyz.x) - resolution.x / 2.0f) * cellSize;
-			float y_cell = (float(xyz.y) - resolution.y / 2.0f) * cellSize;
-			float z_cell = (float(xyz.z) - resolution.z / 2.0f) * cellSize;
+			vec3 gridPos = TexelToGrid(xyz);
 
-			//shift into cell center
-			x_cell += cellSize / 2.0f;
-			y_cell += cellSize / 2.0f;
-			z_cell += cellSize / 2.0f;
-
-			vec4 v_g = vec4(x_cell, y_cell, z_cell, 1.0f);
+			vec4 v_g = vec4(GridToWorld(gridPos),1.0f);
 
 			vec4 v = transpose_inv * v_g;
 
-			vec2 p = vec2(v.x/v.z * intrinsic_focalLength.x + intrinsic_center.x , v.y/v.z * intrinsic_focalLength.y + intrinsic_center.y );
+			ivec2 p = ivec2(v.x/v.z * intrinsic_focalLength.x + intrinsic_center.x , v.y/v.z * intrinsic_focalLength.y + intrinsic_center.y );
 
-			vec4 v_hc = mvp_matrix * v;
 			if( abs(v.x) > 1 || abs(v.y) > 1 )
 			{
 					//return;
 			}
 			if( v.z < 0.00001f ) //behind near plane
 			{
-				return;
+				//return;
 			}
 
-			float sdf = distance( vec4(cam_pos,1) , v_g) - texture2D(depth_map, p).x ;
+			float sdf = distance( vec4(cam_pos,1) , v_g) - ReadDepth(depth_map, p, depth_scale) ;
 
 			//float tsdf = clamp(sdf, -max_dist, max_dist);
 
@@ -110,9 +106,9 @@ GLuint PC_Integrator::genComputeProg()
 			float max_weight = 1.0 / 0.0;   //  = inf 
 			float w_now = min (max_weight , w_last +1); 
 			
-			float tsdf_avg = ( tsdf_last * w_last + tsdf * w_now ) / w_now + w_last;
+			float tsdf_avg = ( tsdf_last * w_last + tsdf * w_now ) / w_now ;
 
-			imageStore(tsdf_tex, xyz, vec4(tsdf,0.0,0.0,0.0));
+			imageStore(tsdf_tex, xyz, vec4(tsdf_avg,0.0,0.0,0.0));
 			imageStore(weight_tex, xyz, vec4(w_now,0.0,0.0,0.0));
 		}		
 	    )glsl";
@@ -154,6 +150,7 @@ GLuint PC_Integrator::genComputeProg()
 	depth_map_uniform = glGetUniformLocation(progHandle, "depth_map");
 	resolution_uniform = glGetUniformLocation(progHandle, "resolution");
 	cellSize_uniform = glGetUniformLocation(progHandle, "cellSize");
+	depth_scale_uniform = glGetUniformLocation(progHandle, "depth_scale");
 
 	glUniform1i(tsdf_tex_uniform, 0); //Image Unit 0
 	glUniform1i(weight_tex_uniform, 1);
@@ -182,7 +179,7 @@ void PC_Integrator::integrate(Frame* frame)
 
 	Eigen::Matrix4f transpose;   //ToDo Integrate Frame transpose here
 	transpose = Eigen::Matrix4f::Identity();
-	//transpose = modelview.matrix();
+	//transpose = modelview.matrix().inverse();
 
 	glUseProgram(this->computeHandle);
 
@@ -195,10 +192,12 @@ void PC_Integrator::integrate(Frame* frame)
 	glUniformMatrix4fv(mvp_matrix_uniform, 1, GL_FALSE, mvp_matrix.data());
 	glUniform3fv(cam_pos_uniform, 1, cam_pos.data());
 	glUniformMatrix4fv(transposeInv_uniform, 1, GL_FALSE, transpose.data());
+	glUniform1f(depth_scale_uniform, frame->GetDepthScale());
 	glBindImageTexture(0, glModel->GetTSDFTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
 	glBindImageTexture(1, glModel->GetWeightTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
 
 	//todo loop over slide
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, this->glModel->GetParamsBuffer());
 	glDispatchCompute(resolutionX, resolutionY, resolutionZ);
 
 }

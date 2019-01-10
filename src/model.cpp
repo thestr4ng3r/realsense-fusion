@@ -100,7 +100,7 @@ void CPUModel::Init()
 
 	for (int x = 0; x < resolutionX*resolutionY*resolutionZ; x++)
 	{
-		tsdf[x] = -1;
+		tsdf[x] = -2;
 		weigths[x] = 1;
 	}
 	// init with -inf missing here

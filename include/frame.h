@@ -35,6 +35,7 @@ class Frame
 		GLuint GetDepthTex()	{ return depth_tex; }
 		int GetDepthWidth()		{ return depth_width; }
 		int GetDepthHeight()	{ return depth_height; }
+		float GetDepthScale() { return depth_scale; }
 
 		void ProcessFrame();
 };

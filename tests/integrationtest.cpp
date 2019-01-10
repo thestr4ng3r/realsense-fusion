@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
 	*/
 
 	CPUModel cpu_model (128, 128, 128, 1.0f / 128.0f);
-	cpu_model.GenerateSphere(0.3f, Eigen::Vector3f(0.0f, 0.0f, 0.0f));
+	//cpu_model.GenerateSphere(0.3f, Eigen::Vector3f(0.0f, 0.0f, 0.0f));
 
 	GLModel glmodel(
 		cpu_model.GetResolutionX(),

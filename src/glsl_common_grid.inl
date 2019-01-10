@@ -26,6 +26,13 @@ ivec3 GridToTexel(vec3 pos)
 	return ivec3(vec3(grid_params.res) * pos);
 }
 
+// texel position in [0, grid_params.res]
+// returns pos in [0.0, 1.0]
+vec3 TexelToGrid(ivec3 pos)
+{
+  return vec3(pos) / vec3(grid_params.res);
+}
+
 vec3 GridExtent()
 {
 	return vec3(grid_params.res) * grid_params.cell_size;
