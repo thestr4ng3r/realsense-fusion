@@ -47,14 +47,12 @@ GLuint PC_Integrator::genComputeProg()
 		"#version 450 core\n"
 		#include "glsl_common_grid.inl"
 		#include "glsl_common_depth.inl"
+		#include "glsl_common_projection.inl"
 		R"glsl(
 
 		layout(r32f, binding = 0) uniform image3D  tsdf_tex;
 		layout(r32f, binding = 1) uniform image3D  weight_tex;
 		layout(binding = 0) uniform usampler2D depth_map;
-
-		uniform vec2 intrinsic_focalLength;
-		uniform vec2 intrinsic_center;
 
 		uniform mat4 mvp_matrix;
 		uniform vec3 cam_pos;
@@ -74,7 +72,7 @@ GLuint PC_Integrator::genComputeProg()
 
 			vec4 v = transpose_inv * v_g;
 
-			ivec2 p = ivec2(v.x/v.z * intrinsic_focalLength.x + intrinsic_center.x , v.y/v.z * intrinsic_focalLength.y + intrinsic_center.y );
+			ivec2 p = ivec2(ProjectCameraToImage(v.xyz));
 			
 			ivec2 depth_res = textureSize(depth_map, 0); 
 			if( p.x < 0 || p.x > depth_res.x || p.y < 0 || p.y > depth_res.y  )
@@ -198,9 +196,10 @@ void PC_Integrator::integrate(Frame* frame)
 	glUniform1f(depth_scale_uniform, frame->GetDepthScale());
 	glBindImageTexture(0, glModel->GetTSDFTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
 	glBindImageTexture(1, glModel->GetWeightTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, this->glModel->GetParamsBuffer());
+	glBindBufferBase(GL_UNIFORM_BUFFER, 1, frame->GetCameraIntrinsicsBuffer());
 
 	//todo loop over slide
-	glBindBufferBase(GL_UNIFORM_BUFFER, 0, this->glModel->GetParamsBuffer());
 	glDispatchCompute(resolutionX, resolutionY, resolutionZ);
 
 }

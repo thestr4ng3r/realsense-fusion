@@ -30,7 +30,7 @@ ivec3 GridToTexel(vec3 pos)
 // returns pos in [0.0, 1.0]
 vec3 TexelToGrid(ivec3 pos)
 {
-  return vec3(pos) / vec3(grid_params.res);
+	return vec3(pos) / vec3(grid_params.res);
 }
 
 vec3 GridExtent()

@@ -5,6 +5,7 @@
 static const char *process_shader_code =
 "#version 450 core\n"
 #include "glsl_common_depth.inl"
+#include "glsl_common_projection.inl"
 R"glsl(
 
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
@@ -20,7 +21,8 @@ void main()
 {
 	ivec2 coords = ivec2(gl_GlobalInvocationID.xy);
 	float depth = ReadDepth(depth_tex, coords, depth_scale);
-	imageStore(vertex_out, coords, vec4(depth, 0.0, 0.0, 0.0));
+	vec3 pos = DeprojectImageToCamera(vec2(coords), depth);
+	imageStore(vertex_out, coords, vec4(pos, 0.0));
 	imageStore(normal_out, coords, vec4(0.0, 0.0, 1.0, 0.0));
 }
 )glsl";
@@ -52,6 +54,8 @@ Frame::Frame() :
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
+	glGenBuffers(1, &camera_intrinsics_buffer);
+
 	process_program = CreateComputeShader(process_shader_code);
 	depth_scale_uniform = glGetUniformLocation(process_program, "depth_scale");
 }
@@ -61,9 +65,11 @@ Frame::~Frame()
 	glDeleteTextures(1, &depth_tex);
 	glDeleteTextures(1, &vertex_tex);
 	glDeleteTextures(1, &normal_tex);
+	glDeleteBuffers(1, &camera_intrinsics_buffer);
+	glDeleteProgram(process_program);
 }
 
-void Frame::SetDepthMap(int width, int height, GLushort *data, float depth_scale)
+void Frame::SetDepthMap(int width, int height, GLushort *data, float depth_scale, const Eigen::Vector2f &focal_length, const Eigen::Vector2f &center)
 {
 	this->depth_scale = depth_scale;
 	glBindTexture(GL_TEXTURE_2D, depth_tex);
@@ -82,6 +88,22 @@ void Frame::SetDepthMap(int width, int height, GLushort *data, float depth_scale
 		this->depth_width = width;
 		this->depth_height = height;
 	}
+
+	intrinsics_focal_length = focal_length;
+	intrinsics_center = center;
+
+	uint32_t buf[8];
+	*((float *)(buf + 0)) = intrinsics_focal_length.x();
+	*((float *)(buf + 1)) = intrinsics_focal_length.y();
+	*((float *)(buf + 2)) = intrinsics_center.x();
+	*((float *)(buf + 3)) = intrinsics_center.y();
+	*(buf + 4) = (uint32_t)depth_width;
+	*(buf + 5) = (uint32_t)depth_height;
+	*(buf + 6) = 0;
+	*(buf + 7) = 0;
+
+	glBindBuffer(GL_UNIFORM_BUFFER, camera_intrinsics_buffer);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(buf), buf, GL_DYNAMIC_DRAW);
 }
 
 void Frame::ProcessFrame()
@@ -96,13 +118,12 @@ void Frame::ProcessFrame()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, depth_tex);
 
-	glBindImageTexture(0, vertex_tex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-	glBindImageTexture(1, normal_tex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+	glBindImageTexture(0, vertex_tex, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+	glBindImageTexture(1, normal_tex, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+
+	glBindBufferBase(GL_UNIFORM_BUFFER, 1, camera_intrinsics_buffer);
 
 	glDispatchCompute(static_cast<GLuint>(depth_width), static_cast<GLuint>(depth_height), 1);
 
-	glFinish();
-	glFlush();
-	glFinish();
-	glFlush();
+	glFinish(); // TODO: use proper synchronization
 }

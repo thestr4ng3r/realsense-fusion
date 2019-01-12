@@ -8,6 +8,8 @@
 
 #include "window.h"
 
+#include <Eigen/Core>
+
 class Frame
 {
 	private:
@@ -20,6 +22,10 @@ class Frame
 		int depth_height;
 		float depth_scale;
 
+		Eigen::Vector2f intrinsics_focal_length;
+		Eigen::Vector2f intrinsics_center;
+		GLuint camera_intrinsics_buffer;
+
 		GLuint process_program;
 		GLint depth_scale_uniform;
 
@@ -31,11 +37,13 @@ class Frame
 		//float* GetDepthMap() { return depthMap;  }
 		//void SetDepthMap(float* depthmap) { this->depthMap = depthMap; }
 
-		void SetDepthMap(int width, int height, GLushort *data, float depth_scale);
+		void SetDepthMap(int width, int height, GLushort *data, float depth_scale, const Eigen::Vector2f &focal_length, const Eigen::Vector2f &center);
 		GLuint GetDepthTex()	{ return depth_tex; }
 		int GetDepthWidth()		{ return depth_width; }
 		int GetDepthHeight()	{ return depth_height; }
-		float GetDepthScale() { return depth_scale; }
+		float GetDepthScale()	{ return depth_scale; }
+		
+		GLuint GetCameraIntrinsicsBuffer()	{ return camera_intrinsics_buffer; }
 
 		void ProcessFrame();
 };

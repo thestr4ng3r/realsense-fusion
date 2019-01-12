@@ -14,13 +14,13 @@ class RealSenseInput : public Input
 		//rs2::pointcloud pc;
 		//rs2::points points;
 
+		rs2_intrinsics intrinsics;
 		float depth_scale;
 
 	public:
 		RealSenseInput();
 		~RealSenseInput();
 
-		rs2_intrinsics intrinsics;
 		bool WaitForFrame(Frame *frame) override;
 
 		float GetPpx() { return intrinsics.ppx; }

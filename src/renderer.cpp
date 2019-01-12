@@ -210,7 +210,7 @@ void Renderer::Render(GLModel *model)
 	int width, height;
 	window->GetSize(&width, &height);
 
-	Eigen::Vector3f cam_pos(0.0f, 0.0f, 3.0f);
+	Eigen::Vector3f cam_pos(0.0f, 0.0f, 1.0f);
 
 	Eigen::Affine3f modelview = Eigen::Affine3f::Identity();
 	modelview.translate(-cam_pos);

@@ -38,7 +38,8 @@ bool RealSenseInput::WaitForFrame(Frame *frame)
 			std::cerr << "Frame from RealSense has invalid stream type or format." << std::endl;
 			return false;
 		}
-		frame->SetDepthMap(depth.get_width(), depth.get_height(), (GLushort *)depth.get_data(), depth_scale);
+		frame->SetDepthMap(depth.get_width(), depth.get_height(), (GLushort *)depth.get_data(), depth_scale,
+				Eigen::Vector2f(intrinsics.fx, intrinsics.fy), Eigen::Vector2f(intrinsics.ppx, intrinsics.ppy));
 		//frame->depthResolutionX = depth.get_width();
 		//frame->depthResolutionY = depth.get_height();
 		//frame->SetDepthMap((float*)depth.get_data());  //Have to see if that works
