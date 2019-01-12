@@ -51,7 +51,7 @@ GLuint PC_Integrator::genComputeProg()
 
 		layout(r32f, binding = 0) uniform image3D  tsdf_tex;
 		layout(r32f, binding = 1) uniform image3D  weight_tex;
-		layout(binding = 0) uniform sampler2D depth_map;
+		layout(binding = 0) uniform usampler2D depth_map;
 
 		uniform vec2 intrinsic_focalLength;
 		uniform vec2 intrinsic_center;
@@ -75,14 +75,16 @@ GLuint PC_Integrator::genComputeProg()
 			vec4 v = transpose_inv * v_g;
 
 			ivec2 p = ivec2(v.x/v.z * intrinsic_focalLength.x + intrinsic_center.x , v.y/v.z * intrinsic_focalLength.y + intrinsic_center.y );
+			
+			ivec2 depth_res = textureSize(depth_map, 0); 
+			if( p.x < 0 || p.x > depth_res.x || p.y < 0 || p.y > depth_res.y  )
+			{
+				return;
+			}
 
 			if( abs(v.x) > 1 || abs(v.y) > 1 )
 			{
 					//return;
-			}
-			if( v.z < 0.00001f ) //behind near plane
-			{
-				//return;
 			}
 
 			float sdf = distance( vec4(cam_pos,1) , v_g) - ReadDepth(depth_map, p, depth_scale) ;
@@ -108,7 +110,7 @@ GLuint PC_Integrator::genComputeProg()
 			
 			float tsdf_avg = ( tsdf_last * w_last + tsdf * w_now ) / w_now ;
 
-			imageStore(tsdf_tex, xyz, vec4(tsdf_avg,0.0,0.0,0.0));
+			imageStore(tsdf_tex, xyz, vec4(sdf,0.0,0.0,0.0));
 			imageStore(weight_tex, xyz, vec4(w_now,0.0,0.0,0.0));
 		}		
 	    )glsl";
@@ -168,7 +170,7 @@ void PC_Integrator::integrate(Frame* frame)
 	glBindTexture(GL_TEXTURE_2D, frame->GetDepthTex());
 
 	// TODO DELOCALIZE CAM POS & PROJECT MATRIX OUT OF PC_INTEGRATOR || Check if MVP matrix is correct
-	Eigen::Vector3f cam_pos(0.0f, 0.0f, 3.0f);
+	Eigen::Vector3f cam_pos(0.0f, 0.0f, 0.0f);
 
 	Eigen::Affine3f modelview = Eigen::Affine3f::Identity();
 	modelview.translate(-cam_pos);
@@ -187,6 +189,7 @@ void PC_Integrator::integrate(Frame* frame)
 	// ToDo : Get Intrinsics
 	glUniform2f(intrinsic_center_uniform, input->GetPpx(), input->GetPpy());
 	glUniform2f(intrinsic_focalLength_uniform, input->GetFx(), input->GetFy());
+
 	glUniform1f(cellSize_uniform, cellSize);
 	glUniform3f(resolution_uniform, resolutionX, resolutionY, resolutionZ);
 	glUniformMatrix4fv(mvp_matrix_uniform, 1, GL_FALSE, mvp_matrix.data());
