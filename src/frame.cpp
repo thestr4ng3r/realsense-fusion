@@ -17,13 +17,44 @@ layout(binding = 0) uniform usampler2D depth_tex;
 layout(rgba32f, binding = 0) uniform image2D vertex_out;
 layout(rgba32f, binding = 1) uniform image2D normal_out;
 
+vec3 VertexForCoords(ivec2 coords, inout float depth)
+{
+	depth = ReadDepth(depth_tex, coords, depth_scale);
+	return DeprojectImageToCamera(vec2(coords), depth);
+}
+
 void main()
 {
 	ivec2 coords = ivec2(gl_GlobalInvocationID.xy);
-	float depth = ReadDepth(depth_tex, coords, depth_scale);
-	vec3 pos = DeprojectImageToCamera(vec2(coords), depth);
+
+	float depth = 0.0;
+	vec3 pos = VertexForCoords(coords, depth);
+
+	vec3 normal;
+	if(depth != 0.0)
+	{
+		vec3 dx = VertexForCoords(coords + ivec2(1, 0), depth);
+		if(depth == 0.0)
+			dx = vec3(1.0, 0.0, 0.0);
+		else
+			dx -= pos;
+
+		vec3 dy = VertexForCoords(coords + ivec2(0, 1), depth);
+		if(depth == 0.0)
+			dy = vec3(0.0, -1.0, 0.0);
+		else
+			dy -= pos;
+
+		normal = normalize(cross(dx, dy));
+	}
+	else
+	{
+		pos = vec3(1.0 / 0.0);
+		normal = vec3(1.0 / 0.0);
+	}
+
 	imageStore(vertex_out, coords, vec4(pos, 0.0));
-	imageStore(normal_out, coords, vec4(0.0, 0.0, 1.0, 0.0));
+	imageStore(normal_out, coords, vec4(normal, 0.0));
 }
 )glsl";
 
@@ -41,14 +72,14 @@ Frame::Frame() :
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 	glGenTextures(1, &vertex_tex);
-	glBindTexture(GL_TEXTURE_2D, depth_tex);
+	glBindTexture(GL_TEXTURE_2D, vertex_tex);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 	glGenTextures(1, &normal_tex);
-	glBindTexture(GL_TEXTURE_2D, depth_tex);
+	glBindTexture(GL_TEXTURE_2D, normal_tex);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
