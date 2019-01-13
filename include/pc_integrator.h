@@ -9,6 +9,7 @@
 
 class GLModel;
 class Window;
+class CameraTransform;
 
 class PC_Integrator
 {
@@ -17,16 +18,11 @@ class PC_Integrator
 		GLModel* glModel;
 
 		GLuint computeHandle;
-		GLuint intrinsic_center_uniform;
-		GLuint intrinsic_focalLength_uniform;
-		GLuint resolution_uniform;
-		GLuint cellSize_uniform;
 		GLuint depth_map_uniform;
-		GLuint mvp_matrix_uniform;
+		GLuint cam_modelview_uniform;
 		GLuint cam_pos_uniform;
 		GLuint weight_tex_uniform;
 		GLuint tsdf_tex_uniform;
-		GLuint transposeInv_uniform;
 		GLuint depth_scale_uniform;
 
 		int resolutionX;
@@ -34,16 +30,14 @@ class PC_Integrator
 		int resolutionZ;
 		float cellSize;
 
-		Input* input;
-
 		GLuint genComputeProg();
 		GLuint genTexture2D(int resolutionX, int resolutionY, float* data);
 
 	public:
-		PC_Integrator(GLModel* glModel, Input* input);
+		PC_Integrator(GLModel* glModel);
 		~PC_Integrator();
 		
-		void integrate(Frame* frame);
+		void integrate(Frame* frame, CameraTransform *camera_transform);
 };
 
 #endif //_PC_INTEGRATOR_H

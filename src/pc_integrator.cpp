@@ -1,4 +1,5 @@
 #include "pc_integrator.h"
+#include "camera_transform.h"
 #include "GL/glew.h"
 
 #include <Eigen/Core>
@@ -20,15 +21,13 @@ Eigen::Matrix<T, 4, 4> PerspectiveMatrix(T fovy, T aspect, T near_clip, T far_cl
 }
 
 
-PC_Integrator::PC_Integrator(GLModel* glModel, Input* input)
+PC_Integrator::PC_Integrator(GLModel* glModel)
 {
 	this->glModel = glModel;
 
 	this->resolutionX = glModel->GetResolutionX();
 	this->resolutionY = glModel->GetResolutionY();
 	this->resolutionZ = glModel->GetResolutionZ();
-
-	this->input = input;
 
 	this->computeHandle = genComputeProg();
 }
@@ -54,11 +53,9 @@ GLuint PC_Integrator::genComputeProg()
 		layout(r32f, binding = 1) uniform image3D  weight_tex;
 		layout(binding = 0) uniform usampler2D depth_map;
 
-		uniform mat4 mvp_matrix;
+		uniform mat4 cam_modelview;
 		uniform vec3 cam_pos;
-		uniform mat4 transpose_inv;
 
-		uniform vec3 resolution;
 		uniform float cellSize;
 		uniform float depth_scale;
 
@@ -70,7 +67,7 @@ GLuint PC_Integrator::genComputeProg()
 
 			vec4 v_g = vec4(GridToWorld(gridPos),1.0f);
 
-			vec4 v = transpose_inv * v_g;
+			vec4 v = cam_modelview * v_g;
 
 			ivec2 p = ivec2(ProjectCameraToImage(v.xyz));
 			
@@ -108,7 +105,7 @@ GLuint PC_Integrator::genComputeProg()
 			
 			float tsdf_avg = ( tsdf_last * w_last + tsdf * w_now ) / w_now ;
 
-			imageStore(tsdf_tex, xyz, vec4(sdf,0.0,0.0,0.0));
+			imageStore(tsdf_tex, xyz, vec4(-sdf,0.0,0.0,0.0));
 			imageStore(weight_tex, xyz, vec4(w_now,0.0,0.0,0.0));
 		}		
 	    )glsl";
@@ -140,16 +137,10 @@ GLuint PC_Integrator::genComputeProg()
 	}
 	glUseProgram(progHandle);
 
-	intrinsic_center_uniform = glGetUniformLocation(progHandle, "intrinsic_center");
-	intrinsic_focalLength_uniform = glGetUniformLocation(progHandle, "intrinsic_focalLength");
-	mvp_matrix_uniform = glGetUniformLocation(progHandle, "mvp_matrix");
+	cam_modelview_uniform = glGetUniformLocation(progHandle, "cam_modelview");
 	cam_pos_uniform = glGetUniformLocation(progHandle, "cam_pos");
-	transposeInv_uniform = glGetUniformLocation(progHandle, "transpose_inv");
 	tsdf_tex_uniform = glGetUniformLocation(progHandle, "tsdf_tex");
 	weight_tex_uniform = glGetUniformLocation(progHandle, "weight_tex");
-	depth_map_uniform = glGetUniformLocation(progHandle, "depth_map");
-	resolution_uniform = glGetUniformLocation(progHandle, "resolution");
-	cellSize_uniform = glGetUniformLocation(progHandle, "cellSize");
 	depth_scale_uniform = glGetUniformLocation(progHandle, "depth_scale");
 
 	glUniform1i(tsdf_tex_uniform, 0); //Image Unit 0
@@ -159,40 +150,20 @@ GLuint PC_Integrator::genComputeProg()
 	return progHandle;
 }
 
-void PC_Integrator::integrate(Frame* frame)
+void PC_Integrator::integrate(Frame *frame, CameraTransform *camera_transform)
 {
-
-	int depthResX = frame->GetDepthWidth();
-	int depthResY = frame->GetDepthHeight();
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, frame->GetDepthTex());
 
-	// TODO DELOCALIZE CAM POS & PROJECT MATRIX OUT OF PC_INTEGRATOR || Check if MVP matrix is correct
-	Eigen::Vector3f cam_pos(0.0f, 0.0f, 0.0f);
 
-	Eigen::Affine3f modelview = Eigen::Affine3f::Identity();
-	modelview.translate(-cam_pos);
-	//modelview.rotate(Eigen::AngleAxisf(0.25f * M_PI, Eigen::Vector3f::UnitX()));
-
-	Eigen::Matrix4f mvp_matrix;
-	mvp_matrix = PerspectiveMatrix<float>(80.0f, (float)depthResX / (float)depthResY, 0.1f, 100.0f) * modelview.matrix();
-
-	Eigen::Matrix4f transpose;   //ToDo Integrate Frame transpose here
-	transpose = Eigen::Matrix4f::Identity();
-	//transpose = modelview.matrix().inverse();
+	Eigen::Vector3f cam_pos = camera_transform->GetTransform().translation();
+	Eigen::Matrix4f modelview = camera_transform->GetModelView();
 
 	glUseProgram(this->computeHandle);
 
 	// UNIFORMS
-	// ToDo : Get Intrinsics
-	glUniform2f(intrinsic_center_uniform, input->GetPpx(), input->GetPpy());
-	glUniform2f(intrinsic_focalLength_uniform, input->GetFx(), input->GetFy());
-
-	glUniform1f(cellSize_uniform, cellSize);
-	glUniform3f(resolution_uniform, resolutionX, resolutionY, resolutionZ);
-	glUniformMatrix4fv(mvp_matrix_uniform, 1, GL_FALSE, mvp_matrix.data());
 	glUniform3fv(cam_pos_uniform, 1, cam_pos.data());
-	glUniformMatrix4fv(transposeInv_uniform, 1, GL_FALSE, transpose.data());
+	glUniformMatrix4fv(cam_modelview_uniform, 1, GL_FALSE, modelview.data());
 	glUniform1f(depth_scale_uniform, frame->GetDepthScale());
 	glBindImageTexture(0, glModel->GetTSDFTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
 	glBindImageTexture(1, glModel->GetWeightTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);

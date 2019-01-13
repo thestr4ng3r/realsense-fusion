@@ -11,6 +11,7 @@
 #include "gl_model.h"
 #include "renderer.h"
 #include "camera_transform.h"
+#include "pc_integrator.h"
 
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/filters/passthrough.h>
@@ -54,6 +55,8 @@ int main(int argc, char *argv[])
 	Eigen::Affine3f t = Eigen::Affine3f::Identity();
 	t.translate(Eigen::Vector3f(0.0f, 0.0f, 1.0f));
 	camera_transform.SetTransform(t);
+
+	PC_Integrator integrator(&gl_model);
 
 	while(!window.GetShouldTerminate())
 	{

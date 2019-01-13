@@ -211,11 +211,9 @@ void Renderer::Render(GLModel *model, CameraTransform *camera_transform)
 	int width, height;
 	window->GetSize(&width, &height);
 
-	Eigen::Vector3f cam_pos(0.0f, 0.0f, 1.0f);
-
-	Eigen::Affine3f modelview = camera_transform->GetTransform().inverse();
+	Eigen::Vector3f cam_pos = camera_transform->GetTransform().translation();
+	Eigen::Matrix4f modelview = camera_transform->GetModelView();
 	Eigen::Matrix4f mvp_matrix = PerspectiveMatrix<float>(80.0f, (float)width / (float)height, 0.1f, 100.0f) * modelview.matrix();
-	//Eigen::Matrix4f mvp_matrix_inv = mvp_matrix.inverse();
 
 	glUseProgram(program);
 	glUniformMatrix4fv(mvp_matrix_uniform, 1, GL_FALSE, mvp_matrix.data());

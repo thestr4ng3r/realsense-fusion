@@ -10,6 +10,7 @@
 #include "renderer.h"
 #include "gl_model.h"
 #include "pc_integrator.h"
+#include "camera_transform.h"
 
 int main(int argc, char *argv[])
 {
@@ -50,9 +51,14 @@ int main(int argc, char *argv[])
 
 	glmodel.CopyFrom(&cpu_model);
 
-	PC_Integrator integrator (&glmodel, input);
+	PC_Integrator integrator (&glmodel);
 
 	Renderer renderer(&window);
+
+	CameraTransform camera_transform;
+	Eigen::Affine3f t = Eigen::Affine3f::Identity();
+	t.translate(Eigen::Vector3f(0.0f, 0.0f, 1.0f));
+	camera_transform.SetTransform(t);
 
 	while (!window.GetShouldTerminate())
 	{
@@ -66,12 +72,12 @@ int main(int argc, char *argv[])
 
 		/*if (!integrated)
 		{*/
-			integrator.integrate(&frame);
+			integrator.integrate(&frame, &camera_transform);
 			integrated = true;
 		//}
 
 		window.BeginRender();
-		renderer.Render(&glmodel);
+		renderer.Render(&glmodel, &camera_transform);
 		window.EndRender();
 	}
 

@@ -14,6 +14,8 @@ class CameraTransform
 
 		const Eigen::Affine3f &GetTransform()		{ return transform; }
 		void SetTransform(const Eigen::Affine3f &t)	{ transform = t; }
+
+		Eigen::Matrix4f GetModelView()				{ return transform.inverse().matrix(); }
 };
 
 #endif //_CAMERA_TRANSFORM_H
