@@ -125,6 +125,49 @@ void main()
 )glsl";
 
 
+
+static const char *box_vertex_shader_code =
+"#version 450 core\n"
+#include "glsl_common_grid.inl"
+R"glsl(
+
+uniform mat4 mvp_matrix;
+
+layout(location = 0) in vec3 vertex_pos;
+
+out vec3 grid_pos;
+
+void main()
+{
+	grid_pos = vertex_pos * 0.5 + 0.5;
+	vec3 world_pos = (grid_pos) * GridExtent() + grid_params.origin;
+	gl_Position = mvp_matrix * vec4(world_pos, 1.0);
+}
+)glsl";
+
+static const char *box_fragment_shader_code =
+"#version 450 core\n"
+#include "glsl_common_grid.inl"
+R"glsl(
+
+in vec3 grid_pos;
+
+out vec4 color_out;
+
+void main()
+{
+	vec3 m = grid_pos * 8.0;
+	m -= floor(m);
+	vec3 color;
+	if(m.x > 0.5 ^^ m.y > 0.5 ^^ m.z > 0.5)
+		color = vec3(0.1, 0.1, 0.2);
+	else
+		color = vec3(0.1, 0.2, 0.1);
+	color_out = vec4(color, 1.0);
+}
+)glsl";
+
+
 Renderer::Renderer(Window *window)
 {
 	this->window = window;
@@ -181,32 +224,34 @@ void Renderer::InitResources()
 	glObjectLabel(GL_BUFFER, ibo, -1, "Renderer::ibo");
 
 
-	GLuint vert_shader = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vert_shader, 1, &vertex_shader_code, nullptr);
-	glCompileShader(vert_shader);
-
-	GLuint frag_shader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(frag_shader, 1, &fragment_shader_code, nullptr);
-	glCompileShader(frag_shader);
-
-	program = glCreateProgram();
-	glAttachShader(program, vert_shader);
-	glAttachShader(program, frag_shader);
-	glLinkProgram(program);
-
-	GLint result, log_len;
-	glGetProgramiv(program, GL_LINK_STATUS, &result);
-	glGetProgramiv(program, GL_INFO_LOG_LENGTH, &log_len);
-	if(log_len > 0)
 	{
-		char *log = new char[log_len + 1];
-		glGetProgramInfoLog(program, log_len, nullptr, log);
-		printf("%s\n", log);
-		delete[] log;
-	}
+		GLuint vert_shader = glCreateShader(GL_VERTEX_SHADER);
+		glShaderSource(vert_shader, 1, &vertex_shader_code, nullptr);
+		glCompileShader(vert_shader);
 
-	glDeleteShader(vert_shader);
-	glDeleteShader(frag_shader);
+		GLuint frag_shader = glCreateShader(GL_FRAGMENT_SHADER);
+		glShaderSource(frag_shader, 1, &fragment_shader_code, nullptr);
+		glCompileShader(frag_shader);
+
+		program = glCreateProgram();
+		glAttachShader(program, vert_shader);
+		glAttachShader(program, frag_shader);
+		glLinkProgram(program);
+
+		GLint result, log_len;
+		glGetProgramiv(program, GL_LINK_STATUS, &result);
+		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &log_len);
+		if(log_len > 0)
+		{
+			char *log = new char[log_len + 1];
+			glGetProgramInfoLog(program, log_len, nullptr, log);
+			printf("%s\n", log);
+			delete[] log;
+		}
+
+		glDeleteShader(vert_shader);
+		glDeleteShader(frag_shader);
+	}
 
 	glObjectLabel(GL_PROGRAM, program, -1, "Renderer::program");
 
@@ -216,6 +261,39 @@ void Renderer::InitResources()
 
 	glUseProgram(program);
 	glUniform1i(tsdf_tex_uniform, 0);
+
+	{
+		GLuint vert_shader = glCreateShader(GL_VERTEX_SHADER);
+		glShaderSource(vert_shader, 1, &box_vertex_shader_code, nullptr);
+		glCompileShader(vert_shader);
+
+		GLuint frag_shader = glCreateShader(GL_FRAGMENT_SHADER);
+		glShaderSource(frag_shader, 1, &box_fragment_shader_code, nullptr);
+		glCompileShader(frag_shader);
+
+		box_program = glCreateProgram();
+		glAttachShader(box_program, vert_shader);
+		glAttachShader(box_program, frag_shader);
+		glLinkProgram(box_program);
+
+		GLint result, log_len;
+		glGetProgramiv(box_program, GL_LINK_STATUS, &result);
+		glGetProgramiv(box_program, GL_INFO_LOG_LENGTH, &log_len);
+		if(log_len > 0)
+		{
+			char *log = new char[log_len + 1];
+			glGetProgramInfoLog(box_program, log_len, nullptr, log);
+			printf("%s\n", log);
+			delete[] log;
+		}
+
+		glDeleteShader(vert_shader);
+		glDeleteShader(frag_shader);
+	}
+
+	glObjectLabel(GL_PROGRAM, box_program, -1, "Renderer::box_program");
+
+	box_mvp_matrix_uniform = glGetUniformLocation(box_program, "mvp_matrix");
 
 	fbo_width = fbo_height = -1;
 	glCreateFramebuffers(1, &fbo);
@@ -264,15 +342,24 @@ void Renderer::Render(GLModel *model, CameraTransform *camera_transform)
 	Eigen::Matrix4f modelview = camera_transform->GetModelView();
 	Eigen::Matrix4f mvp_matrix = PerspectiveMatrix<float>(80.0f, (float)width / (float)height, 0.1f, 100.0f) * modelview.matrix();
 
-	glUseProgram(program);
-	glUniformMatrix4fv(mvp_matrix_uniform, 1, GL_FALSE, mvp_matrix.data());
-	glUniform3fv(cam_pos_uniform, 1, cam_pos.data());
-	glBindBufferBase(GL_UNIFORM_BUFFER, 0, model->GetParamsBuffer());
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_3D, model->GetTSDFTex());
+	glDisable(GL_DEPTH_TEST);
 	glBindVertexArray(vao);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, model->GetParamsBuffer());
+
+	glUseProgram(box_program);
+	glCullFace(GL_FRONT);
+	glDepthMask(GL_FALSE);
+	glUniformMatrix4fv(box_mvp_matrix_uniform, 1, GL_FALSE, mvp_matrix.data());
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, nullptr);
+
+	glUseProgram(program);
+	glCullFace(GL_BACK);
+	glUniformMatrix4fv(mvp_matrix_uniform, 1, GL_FALSE, mvp_matrix.data());
+	glUniform3fv(cam_pos_uniform, 1, cam_pos.data());
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_3D, model->GetTSDFTex());
 	glDepthMask(GL_TRUE);
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, nullptr);
 

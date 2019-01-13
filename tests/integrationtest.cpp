@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
 	glmodel.CopyFrom(&cpu_model);
 	*/
 
-	CPUModel cpu_model (128, 128, 128, 1.0f / 128.0f);
+	CPUModel cpu_model (256, 256, 256, 1.0f / 256.0f);
 	//cpu_model.GenerateSphere(0.3f, Eigen::Vector3f(0.0f, 0.0f, 0.0f));
 
 	GLModel glmodel(

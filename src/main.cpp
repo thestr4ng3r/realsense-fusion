@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
 				gl_model.GetResolutionY(),
 				gl_model.GetResolutionZ(),
 				gl_model.GetCellSize());
-		test_model.GenerateSphere(0.45f, Eigen::Vector3f(0.0f, 0.0f, 0.0f));
+		test_model.GenerateSphere(0.2f, Eigen::Vector3f(0.0f, 0.0f, 0.0f));
 		gl_model.CopyFrom(&test_model);
 	}
 
@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
 	CameraTransform camera_transform;
 
 	Eigen::Affine3f t = Eigen::Affine3f::Identity();
-	t.translate(Eigen::Vector3f(0.0f, 0.0f, 1.0f));
+	t.translate(Eigen::Vector3f(0.0f, 0.0f, 1.5f));
 	camera_transform.SetTransform(t);
 
 	PC_Integrator integrator(&gl_model);

@@ -14,12 +14,14 @@ class Renderer
 		GLuint vbo = 0;
 		GLuint vao = 0;
 		GLuint ibo = 0;
-		GLuint program = 0;
 
+		GLuint program = 0;
 		GLint mvp_matrix_uniform = -1;
 		GLint cam_pos_uniform = -1;
-
 		GLint tsdf_tex_uniform = -1;
+
+		GLuint box_program = 0;
+		GLint box_mvp_matrix_uniform = -1;
 
 		GLuint fbo;
 		GLuint color_tex;
