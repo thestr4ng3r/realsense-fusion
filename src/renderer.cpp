@@ -56,6 +56,8 @@ static const char *fragment_shader_code =
 R"glsl(
 uniform sampler3D tsdf_tex;
 
+uniform mat4 mvp_matrix;
+
 in vec3 world_pos;
 in vec3 world_dir;
 
@@ -116,6 +118,8 @@ void main()
 	float l = 0.1;
 	l += 0.5 * Phong(normal, normalize(vec3(1.0, 1.0, 1.0)), 0.5, 64.0);
 
+	vec4 screen_coord = mvp_matrix * vec4(world_pos_cur, 1.0);
+	gl_FragDepth = screen_coord.z / screen_coord.w;
 	color_out = vec4(vec3(l), 1.0);
 }
 )glsl";
@@ -133,6 +137,9 @@ Renderer::~Renderer()
 	glDeleteBuffers(1, &ibo);
 	glDeleteVertexArrays(1, &vao);
 	glDeleteProgram(program);
+	glDeleteFramebuffers(1, &fbo);
+	glDeleteTextures(1, &color_tex);
+	glDeleteTextures(1, &depth_tex);
 }
 
 void Renderer::InitResources()
@@ -160,15 +167,18 @@ void Renderer::InitResources()
 	glGenBuffers(1, &vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertex_data), vertex_data, GL_STATIC_DRAW);
+	glObjectLabel(GL_BUFFER, vbo, -1, "Renderer::vbo");
 
 	glGenVertexArrays(1, &vao);
 	glBindVertexArray(vao);
 	glEnableVertexAttribArray(ATTRIBUTE_VERTEX_POS);
 	glVertexAttribPointer(ATTRIBUTE_VERTEX_POS, 3, GL_FLOAT, GL_FALSE, 0, nullptr);
+	glObjectLabel(GL_VERTEX_ARRAY, vao, -1, "Renderer::vao");
 
 	glGenBuffers(1, &ibo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index_data), index_data, GL_STATIC_DRAW);
+	glObjectLabel(GL_BUFFER, ibo, -1, "Renderer::ibo");
 
 
 	GLuint vert_shader = glCreateShader(GL_VERTEX_SHADER);
@@ -198,6 +208,8 @@ void Renderer::InitResources()
 	glDeleteShader(vert_shader);
 	glDeleteShader(frag_shader);
 
+	glObjectLabel(GL_PROGRAM, program, -1, "Renderer::program");
+
 	mvp_matrix_uniform = glGetUniformLocation(program, "mvp_matrix");
 	cam_pos_uniform = glGetUniformLocation(program, "cam_pos");
 	tsdf_tex_uniform = glGetUniformLocation(program, "tsdf_tex");
@@ -216,6 +228,7 @@ void Renderer::InitResources()
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, color_tex, 0);
+	glObjectLabel(GL_TEXTURE, color_tex, -1, "Renderer::color_tex");
 
 	glGenTextures(1, &depth_tex);
 	glBindTexture(GL_TEXTURE_2D, depth_tex);
@@ -224,6 +237,7 @@ void Renderer::InitResources()
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depth_tex, 0);
+	glObjectLabel(GL_TEXTURE, depth_tex, -1, "Renderer::depth_tex");
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -244,6 +258,7 @@ void Renderer::Render(GLModel *model, CameraTransform *camera_transform)
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	Eigen::Vector3f cam_pos = camera_transform->GetTransform().translation();
 	Eigen::Matrix4f modelview = camera_transform->GetModelView();
@@ -257,6 +272,8 @@ void Renderer::Render(GLModel *model, CameraTransform *camera_transform)
 	glBindTexture(GL_TEXTURE_3D, model->GetTSDFTex());
 	glBindVertexArray(vao);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+	glEnable(GL_DEPTH_TEST);
+	glDepthMask(GL_TRUE);
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, nullptr);
 
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
