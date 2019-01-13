@@ -21,6 +21,12 @@ class Renderer
 
 		GLint tsdf_tex_uniform = -1;
 
+		GLuint fbo;
+		GLuint color_tex;
+		GLuint depth_tex;
+		int fbo_width;
+		int fbo_height;
+
 		void InitResources();
 
 	public:

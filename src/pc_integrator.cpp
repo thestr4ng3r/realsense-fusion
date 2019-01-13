@@ -145,7 +145,6 @@ GLuint PC_Integrator::genComputeProg()
 
 	glUniform1i(tsdf_tex_uniform, 0); //Image Unit 0
 	glUniform1i(weight_tex_uniform, 1);
-	glUniform1i(depth_map_uniform, 0);//Texture Unit 0
 
 	return progHandle;
 }
