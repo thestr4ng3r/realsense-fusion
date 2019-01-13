@@ -1800,7 +1800,7 @@ static int stbtt__GetGlyphShapeTT(const stbtt_fontinfo *info, int glyph_index, s
             mtx[3] = ttSHORT(comp)/16384.0f; comp+=2;
          }
          
-         // Find transformation scales.
+         // Find transform scales.
          m = (float) STBTT_sqrt(mtx[0]*mtx[0] + mtx[1]*mtx[1]);
          n = (float) STBTT_sqrt(mtx[2]*mtx[2] + mtx[3]*mtx[3]);
 

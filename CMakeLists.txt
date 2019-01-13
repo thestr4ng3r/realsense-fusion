@@ -18,7 +18,8 @@ set(HEADER_FILES
 		include/window.h
 		include/gl_model.h
 		include/pc_integrator.h
-		include/shader_common.h)
+		include/shader_common.h
+		include/camera_transform.h)
 
 set(SOURCE_FILES
 		src/realsense_input.cpp
@@ -28,7 +29,8 @@ set(SOURCE_FILES
 		src/window.cpp
 		src/gl_model.cpp
 		src/pc_integrator.cpp
-		src/shader_common.cpp)
+		src/shader_common.cpp
+		src/camera_transform.cpp)
 
 set(SOURCE_FILE_MAIN
 		src/main.cpp)

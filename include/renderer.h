@@ -4,6 +4,7 @@
 
 class GLModel;
 class Window;
+class CameraTransform;
 
 class Renderer
 {
@@ -26,7 +27,7 @@ class Renderer
 		explicit Renderer(Window *window);
 		~Renderer();
 
-		void Render(GLModel *model);
+		void Render(GLModel *model, CameraTransform *camera_transform);
 };
 
 #endif //_RENDERER_H

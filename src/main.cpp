@@ -10,6 +10,7 @@
 #include "window.h"
 #include "gl_model.h"
 #include "renderer.h"
+#include "camera_transform.h"
 
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/filters/passthrough.h>
@@ -48,6 +49,12 @@ int main(int argc, char *argv[])
 
 	Renderer renderer(&window);
 
+	CameraTransform camera_transform;
+
+	Eigen::Affine3f t = Eigen::Affine3f::Identity();
+	t.translate(Eigen::Vector3f(0.0f, 0.0f, 1.0f));
+	camera_transform.SetTransform(t);
+
 	while(!window.GetShouldTerminate())
 	{
 		window.Update();
@@ -68,7 +75,7 @@ int main(int argc, char *argv[])
 		window.EndGUI();
 
 		window.BeginRender();
-		renderer.Render(&gl_model);
+		renderer.Render(&gl_model, &camera_transform);
 		window.EndRender();
 	}
 
