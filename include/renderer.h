@@ -25,6 +25,8 @@ class Renderer
 
 		GLuint fbo;
 		GLuint color_tex;
+		GLuint vertex_tex;
+		GLuint normal_tex;
 		GLuint depth_tex;
 		int fbo_width;
 		int fbo_height;

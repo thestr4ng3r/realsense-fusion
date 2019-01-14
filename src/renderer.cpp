@@ -61,7 +61,9 @@ uniform mat4 mvp_matrix;
 in vec3 world_pos;
 in vec3 world_dir;
 
-out vec4 color_out;
+layout(location = 0) out vec4 color_out;
+layout(location = 1) out vec3 vertex_out;
+layout(location = 2) out vec3 normal_out;
 
 float SDF(vec3 grid_pos)
 {
@@ -121,6 +123,8 @@ void main()
 	vec4 screen_coord = mvp_matrix * vec4(world_pos_cur, 1.0);
 	gl_FragDepth = screen_coord.z / screen_coord.w;
 	color_out = vec4(vec3(l), 1.0);
+	vertex_out = world_pos_cur;
+	normal_out = normal;
 }
 )glsl";
 
@@ -308,6 +312,24 @@ void Renderer::InitResources()
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, color_tex, 0);
 	glObjectLabel(GL_TEXTURE, color_tex, -1, "Renderer::color_tex");
 
+	glGenTextures(1, &vertex_tex);
+	glBindTexture(GL_TEXTURE_2D, vertex_tex);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, vertex_tex, 0);
+	glObjectLabel(GL_TEXTURE, vertex_tex, -1, "Renderer::vertex_tex");
+
+	glGenTextures(1, &normal_tex);
+	glBindTexture(GL_TEXTURE_2D, normal_tex);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, normal_tex, 0);
+	glObjectLabel(GL_TEXTURE, normal_tex, -1, "Renderer::vertex_tex");
+
 	glGenTextures(1, &depth_tex);
 	glBindTexture(GL_TEXTURE_2D, depth_tex);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -331,6 +353,10 @@ void Renderer::Render(GLModel *model, CameraTransform *camera_transform)
 		fbo_height = height;
 		glBindTexture(GL_TEXTURE_2D, color_tex);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+		glBindTexture(GL_TEXTURE_2D, vertex_tex);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, nullptr);
+		glBindTexture(GL_TEXTURE_2D, normal_tex);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, nullptr);
 		glBindTexture(GL_TEXTURE_2D, depth_tex);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 	}
@@ -365,6 +391,7 @@ void Renderer::Render(GLModel *model, CameraTransform *camera_transform)
 
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	glReadBuffer(GL_COLOR_ATTACHMENT0);
 	glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 }
 
