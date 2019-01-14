@@ -56,7 +56,7 @@ static const char *fragment_shader_code =
 R"glsl(
 uniform sampler3D tsdf_tex;
 
-uniform mat4 mvp_matrix;
+uniform mat4 modelview_matrix;
 
 in vec3 world_pos;
 in vec3 world_dir;
@@ -123,7 +123,7 @@ void main()
 	vec4 screen_coord = mvp_matrix * vec4(world_pos_cur, 1.0);
 	gl_FragDepth = screen_coord.z / screen_coord.w;
 	color_out = vec4(vec3(l), 1.0);
-	vertex_out = world_pos_cur;
+	vertex_out = modelview_matrix * world_pos_cur;
 	normal_out = normal;
 }
 )glsl";
@@ -260,6 +260,7 @@ void Renderer::InitResources()
 	glObjectLabel(GL_PROGRAM, program, -1, "Renderer::program");
 
 	mvp_matrix_uniform = glGetUniformLocation(program, "mvp_matrix");
+	modelview_matrix_uniform = glGetUniformLocation(program, "mvp_matrix");
 	cam_pos_uniform = glGetUniformLocation(program, "cam_pos");
 	tsdf_tex_uniform = glGetUniformLocation(program, "tsdf_tex");
 
@@ -412,6 +413,7 @@ void Renderer::Render(GLModel *model, CameraTransform *camera_transform)
 	glUseProgram(program);
 	glCullFace(GL_BACK);
 	glUniformMatrix4fv(mvp_matrix_uniform, 1, GL_FALSE, mvp_matrix.data());
+	glUniformMatrix4fv(modelview_matrix_uniform, 1, GL_FALSE, modelview.data());
 	glUniform3fv(cam_pos_uniform, 1, cam_pos.data());
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D, model->GetTSDFTex());

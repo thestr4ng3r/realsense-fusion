@@ -6,6 +6,7 @@
 
 class Frame;
 class CameraTransform;
+class Renderer;
 
 class ICP
 {
@@ -19,7 +20,7 @@ class ICP
 		ICP();
 		virtual ~ICP();
 
-		void SearchCorrespondences(Frame *frame, const CameraTransform &cam_transform_old, CameraTransform *cam_transform_new);
+		void SearchCorrespondences(Frame *frame, Renderer *renderer, const CameraTransform &cam_transform_old, CameraTransform *cam_transform_new);
 };
 
 #endif //_ICP_H

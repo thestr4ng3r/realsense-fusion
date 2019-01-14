@@ -17,6 +17,7 @@ class Renderer
 
 		GLuint program = 0;
 		GLint mvp_matrix_uniform = -1;
+		GLint modelview_matrix_uniform = -1;
 		GLint cam_pos_uniform = -1;
 		GLint tsdf_tex_uniform = -1;
 
@@ -36,6 +37,9 @@ class Renderer
 	public:
 		explicit Renderer(Window *window);
 		~Renderer();
+
+		GLuint GetVertexTex()	{ return vertex_tex; }
+		GLuint GetNormalTex()	{ return normal_tex; }
 
 		void Render(GLModel *model, CameraTransform *camera_transform);
 };
