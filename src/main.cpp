@@ -12,6 +12,7 @@
 #include "renderer.h"
 #include "camera_transform.h"
 #include "pc_integrator.h"
+#include "icp.h"
 
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/filters/passthrough.h>
@@ -59,6 +60,8 @@ int main(int argc, char *argv[])
 	t.translate(Eigen::Vector3f(0.0f, 0.0f, 1.5f));
 	camera_transform.SetTransform(t);
 
+	ICP icp;
+
 	PC_Integrator integrator(&gl_model);
 
 	while(!window.GetShouldTerminate())
@@ -71,6 +74,11 @@ int main(int argc, char *argv[])
 			continue;
 		}
 		frame.ProcessFrame();
+
+		CameraTransform camera_transform_old = camera_transform;
+		icp.SearchCorrespondences(&frame, camera_transform_old, &camera_transform);
+
+		integrator.integrate(&frame, &camera_transform);
 
 		window.BeginGUI();
 		ImGui::Begin("Hello");

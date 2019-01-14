@@ -42,6 +42,9 @@ class Frame
 		int GetDepthWidth()		{ return depth_width; }
 		int GetDepthHeight()	{ return depth_height; }
 		float GetDepthScale()	{ return depth_scale; }
+
+		GLuint GetVertexTex()	{ return vertex_tex; }
+		GLuint GetNormalTex()	{ return normal_tex; }
 		
 		GLuint GetCameraIntrinsicsBuffer()	{ return camera_intrinsics_buffer; }
 

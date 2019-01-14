@@ -389,7 +389,7 @@ void Renderer::Render(GLModel *model, CameraTransform *camera_transform)
 		}
 		printf("fbo status: %s\n", state_name);
 	}
-	GLenum draw_buffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
+	GLenum draw_buffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
 	glDrawBuffers(3, draw_buffers);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -421,7 +421,7 @@ void Renderer::Render(GLModel *model, CameraTransform *camera_transform)
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glReadBuffer(GL_COLOR_ATTACHMENT0);
-	glDrawBuffer(GL_FRONT_AND_BACK);
+	glDrawBuffer(GL_BACK);
 	glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 }
 

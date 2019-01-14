@@ -12,13 +12,14 @@ class ICP
 	private:
 		GLuint corr_program;
 
-		GLuint corr_tex;
+		GLuint residuals_buffer;
+		size_t residuals_buffer_size;
 
 	public:
 		ICP();
 		virtual ~ICP();
 
-		void SearchCorrespondences(Frame *frame, CameraTransform *cam_transform_old, CameraTransform *cam_transform_new);
+		void SearchCorrespondences(Frame *frame, const CameraTransform &cam_transform_old, CameraTransform *cam_transform_new);
 };
 
 #endif //_ICP_H

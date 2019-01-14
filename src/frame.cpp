@@ -155,6 +155,4 @@ void Frame::ProcessFrame()
 	glBindBufferBase(GL_UNIFORM_BUFFER, 1, camera_intrinsics_buffer);
 
 	glDispatchCompute(static_cast<GLuint>(depth_width), static_cast<GLuint>(depth_height), 1);
-
-	glFinish(); // TODO: use proper synchronization
 }
