@@ -5,6 +5,7 @@
 class GLModel;
 class Window;
 class CameraTransform;
+class Frame;
 
 class Renderer
 {
@@ -41,7 +42,7 @@ class Renderer
 		GLuint GetVertexTex()	{ return vertex_tex; }
 		GLuint GetNormalTex()	{ return normal_tex; }
 
-		void Render(GLModel *model, CameraTransform *camera_transform);
+		void Render(GLModel *model, Frame *frame, CameraTransform *camera_transform);
 };
 
 #endif //_RENDERER_H

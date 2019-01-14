@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
 		//}
 
 		window.BeginRender();
-		renderer.Render(&glmodel, &camera_transform);
+		renderer.Render(&glmodel, &frame, &camera_transform);
 		window.EndRender();
 	}
 

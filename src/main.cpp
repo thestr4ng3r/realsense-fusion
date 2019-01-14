@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 		frame.ProcessFrame();
 
 		CameraTransform camera_transform_old = camera_transform;
-		icp.SearchCorrespondences(&frame, camera_transform_old, &camera_transform);
+		icp.SearchCorrespondences(&frame, &renderer, camera_transform_old, &camera_transform);
 
 		integrator.integrate(&frame, &camera_transform);
 
@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
 		window.EndGUI();
 
 		window.BeginRender();
-		renderer.Render(&gl_model, &camera_transform);
+		renderer.Render(&gl_model, &frame, &camera_transform);
 		window.EndRender();
 	}
 

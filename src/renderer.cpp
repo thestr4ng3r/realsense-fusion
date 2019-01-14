@@ -3,6 +3,7 @@
 #include "renderer.h"
 #include "gl_model.h"
 #include "camera_transform.h"
+#include "frame.h"
 
 #include <stdio.h>
 #include <exception>
@@ -120,10 +121,10 @@ void main()
 	float l = 0.1;
 	l += 0.5 * Phong(normal, normalize(vec3(1.0, 1.0, 1.0)), 0.5, 64.0);
 
-	vec4 screen_coord = mvp_matrix * vec4(world_pos_cur, 1.0);
-	gl_FragDepth = screen_coord.z / screen_coord.w;
+	//vec4 screen_coord = mvp_matrix * vec4(world_pos_cur, 1.0);
+	//gl_FragDepth = screen_coord.z / screen_coord.w;
 	color_out = vec4(vec3(l), 1.0);
-	vertex_out = modelview_matrix * world_pos_cur;
+	vertex_out = (modelview_matrix * vec4(world_pos_cur, 1.0)).xyz;
 	normal_out = normal;
 }
 )glsl";
@@ -260,7 +261,7 @@ void Renderer::InitResources()
 	glObjectLabel(GL_PROGRAM, program, -1, "Renderer::program");
 
 	mvp_matrix_uniform = glGetUniformLocation(program, "mvp_matrix");
-	modelview_matrix_uniform = glGetUniformLocation(program, "mvp_matrix");
+	modelview_matrix_uniform = glGetUniformLocation(program, "modelview_matrix");
 	cam_pos_uniform = glGetUniformLocation(program, "cam_pos");
 	tsdf_tex_uniform = glGetUniformLocation(program, "tsdf_tex");
 
@@ -343,10 +344,10 @@ void Renderer::InitResources()
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void Renderer::Render(GLModel *model, CameraTransform *camera_transform)
+void Renderer::Render(GLModel *model, Frame *frame, CameraTransform *camera_transform)
 {
-	int width, height;
-	window->GetSize(&width, &height);
+	int width = frame->GetDepthWidth();
+	int height = frame->GetDepthHeight();
 
 	if(width != fbo_width || height != fbo_height)
 	{
@@ -361,6 +362,9 @@ void Renderer::Render(GLModel *model, CameraTransform *camera_transform)
 		glBindTexture(GL_TEXTURE_2D, depth_tex);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 	}
+
+	float vertex_clear[] = { INFINITY, INFINITY, INFINITY, INFINITY };
+	glClearTexImage(vertex_tex, 0, GL_RGBA, GL_FLOAT, vertex_clear);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 	GLenum fbo_state = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -390,25 +394,29 @@ void Renderer::Render(GLModel *model, CameraTransform *camera_transform)
 		}
 		printf("fbo status: %s\n", state_name);
 	}
-	GLenum draw_buffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
-	glDrawBuffers(3, draw_buffers);
+	glDrawBuffer(GL_COLOR_ATTACHMENT0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	Eigen::Vector3f cam_pos = camera_transform->GetTransform().translation();
 	Eigen::Matrix4f modelview = camera_transform->GetModelView();
-	Eigen::Matrix4f mvp_matrix = PerspectiveMatrix<float>(80.0f, (float)width / (float)height, 0.1f, 100.0f) * modelview.matrix();
+	Eigen::Matrix4f projection = PerspectiveMatrix<float>(80.0f, (float)width / (float)height, 0.1f, 100.0f);
+	Eigen::Matrix4f mvp_matrix = projection * modelview.matrix();
 
 	glDisable(GL_DEPTH_TEST);
 	glBindVertexArray(vao);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
 	glEnable(GL_CULL_FACE);
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, model->GetParamsBuffer());
+	glBindBufferBase(GL_UNIFORM_BUFFER, 1, frame->GetCameraIntrinsicsBuffer());
 
 	glUseProgram(box_program);
 	glCullFace(GL_FRONT);
 	glDepthMask(GL_FALSE);
 	glUniformMatrix4fv(box_mvp_matrix_uniform, 1, GL_FALSE, mvp_matrix.data());
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, nullptr);
+
+	GLenum draw_buffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2};
+	glDrawBuffers(3, draw_buffers);
 
 	glUseProgram(program);
 	glCullFace(GL_BACK);
@@ -424,6 +432,8 @@ void Renderer::Render(GLModel *model, CameraTransform *camera_transform)
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glReadBuffer(GL_COLOR_ATTACHMENT0);
 	glDrawBuffer(GL_BACK);
-	glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+	int window_width, window_height;
+	window->GetSize(&window_width, &window_height);
+	glBlitFramebuffer(0, 0, width, height, 0, 0, window_width, window_height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 }
 

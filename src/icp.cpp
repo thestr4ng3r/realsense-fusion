@@ -52,16 +52,16 @@ void main()
 {
 	coord = ivec2(gl_GlobalInvocationID.xy);
 	vec3 vertex_current_camera = texelFetch(vertex_tex_current, coord, 0).xyz;
-	if(isinf(vertex_current.x))
+	if(isinf(vertex_current_camera.x))
 	{
 		StoreNopResidual();
 		return;
 	}
 	vec3 normal_current = texelFetch(normal_tex_current, coord, 0).xyz;
 
-	vec3 vertex_current_world = transform_current * vertex_current_camera;
-	vec3 vertex_current_camera_prev = modelview_prev * vertex_current_world;
-	vec2 vertex_current_image_prev = ProjectCameraToImage(vertex_current_camera_prev) / vec2(camera_instrinsics.res);
+	vec3 vertex_current_world = (transform_current * vec4(vertex_current_camera, 1.0)).xyz;
+	vec3 vertex_current_camera_prev = (modelview_prev * vec4(vertex_current_world, 1.0)).xyz;
+	vec2 vertex_current_image_prev = ProjectCameraToImage(vertex_current_camera_prev) / vec2(camera_intrinsics.res);
 	if(vertex_current_image_prev.x < 0.0 || vertex_current_image_prev.y < 0.0
 		|| vertex_current_image_prev.x > 1.0 || vertex_current_image_prev.y < 1.0
 		|| vertex_current_camera_prev.z < 0.0)
@@ -74,7 +74,7 @@ void main()
 
 	// https://github.com/chrdiller/KinectFusionLib/blob/master/src/cuda/pose_estimation.cu#L94
 
-	StoreResidual(vertex_current, normal_current);
+	StoreResidual(vertex_current_camera, normal_current);
 }
 )glsl";
 

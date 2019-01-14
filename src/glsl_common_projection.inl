@@ -7,7 +7,7 @@ layout(std140, binding=1) uniform CameraIntrinsicsBlock
 } camera_intrinsics;
 
 // see rs2_project_point_to_pixel()
-// returns a pixel coordinate in [0, camera_instrinsics.res]
+// returns a pixel coordinate in [0, camera_intrinsics.res]
 vec2 ProjectCameraToImage(vec3 pos)
 {
 	vec2 v = pos.xy / pos.z;
@@ -18,7 +18,7 @@ vec2 ProjectCameraToImage(vec3 pos)
 }
 
 // see rs2_deproject_pixel_to_point
-// pos is a pixel coordinate in [0, camera_instrinsics.res]
+// pos is a pixel coordinate in [0, camera_intrinsics.res]
 vec3 DeprojectImageToCamera(vec2 pos, float depth)
 {
 	vec2 v = pos - camera_intrinsics.center;
