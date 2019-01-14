@@ -18,7 +18,7 @@ class RealSenseInput : public Input
 		float depth_scale;
 
 	public:
-		RealSenseInput();
+		RealSenseInput(const rs2::config &config = rs2::config());
 		~RealSenseInput();
 
 		bool WaitForFrame(Frame *frame) override;

@@ -25,7 +25,10 @@ int main(int argc, char *argv[])
 	Input *input;
 
 #if defined(ENABLE_INPUT_REALSENSE)
-	input = new RealSenseInput();
+	rs2::config rs_config;
+	if(argc >= 2)
+		rs_config.enable_device_from_file(std::string(argv[1]));
+	input = new RealSenseInput(rs_config);
 #if defined(ENABLE_INPUT_KINECT)
 //#warning "Building with both RealSense and Kinect. Using RealSense."
 #endif

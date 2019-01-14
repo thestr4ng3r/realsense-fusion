@@ -314,8 +314,8 @@ void Renderer::InitResources()
 
 	glGenTextures(1, &vertex_tex);
 	glBindTexture(GL_TEXTURE_2D, vertex_tex);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, vertex_tex, 0);
@@ -323,12 +323,12 @@ void Renderer::InitResources()
 
 	glGenTextures(1, &normal_tex);
 	glBindTexture(GL_TEXTURE_2D, normal_tex);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, normal_tex, 0);
-	glObjectLabel(GL_TEXTURE, normal_tex, -1, "Renderer::vertex_tex");
+	glObjectLabel(GL_TEXTURE, normal_tex, -1, "Renderer::normal_tex");
 
 	glGenTextures(1, &depth_tex);
 	glBindTexture(GL_TEXTURE_2D, depth_tex);
@@ -354,14 +354,43 @@ void Renderer::Render(GLModel *model, CameraTransform *camera_transform)
 		glBindTexture(GL_TEXTURE_2D, color_tex);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 		glBindTexture(GL_TEXTURE_2D, vertex_tex);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, nullptr);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
 		glBindTexture(GL_TEXTURE_2D, normal_tex);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, nullptr);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
 		glBindTexture(GL_TEXTURE_2D, depth_tex);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	GLenum fbo_state = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if(fbo_state != GL_FRAMEBUFFER_COMPLETE)
+	{
+		const char *state_name;
+		switch(fbo_state)
+		{
+			case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+				state_name = "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT";
+				break;
+			case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+				state_name = "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT";
+				break;
+			case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
+				state_name = "GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER";
+				break;
+			case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
+				state_name = "GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER";
+				break;
+			case GL_FRAMEBUFFER_UNSUPPORTED:
+				state_name = "GL_FRAMEBUFFER_UNSUPPORTED";
+				break;
+			default:
+				state_name = "?";
+				break;
+		}
+		printf("fbo status: %s\n", state_name);
+	}
+	GLenum draw_buffers[] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
+	glDrawBuffers(3, draw_buffers);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	Eigen::Vector3f cam_pos = camera_transform->GetTransform().translation();
@@ -392,6 +421,7 @@ void Renderer::Render(GLModel *model, CameraTransform *camera_transform)
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 	glReadBuffer(GL_COLOR_ATTACHMENT0);
+	glDrawBuffer(GL_FRONT_AND_BACK);
 	glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 }
 
