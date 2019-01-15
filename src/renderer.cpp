@@ -26,6 +26,20 @@ Eigen::Matrix<T, 4, 4> PerspectiveMatrix(T fovy, T aspect, T near_clip, T far_cl
 	return r;
 }
 
+Eigen::Matrix4f CameraIntrinsicsMatrix(Eigen::Vector2f f, Eigen::Vector2f center, Eigen::Vector2f res, float near_clip, float far_clip)
+{
+	f = f.cwiseQuotient(res);
+	center = center.cwiseQuotient(res) * 2.0f - Eigen::Vector2f(1.0f, 1.0f);
+	float nmfi = 1.0f / (near_clip - far_clip);
+	Eigen::Matrix4f r;
+	r <<	f.x(),	0.0,	center.x(),						0.0,
+			0.0,	f.y(),	center.y(),						0.0,
+			0.0,	0.0,	(far_clip + near_clip) * nmfi,	2.0 * far_clip * near_clip * nmfi,
+			0.0,	0.0,	-1.0,							0.0;
+	return r;
+}
+
+
 
 
 #define ATTRIBUTE_VERTEX_POS 0
@@ -399,8 +413,14 @@ void Renderer::Render(GLModel *model, Frame *frame, CameraTransform *camera_tran
 
 	Eigen::Vector3f cam_pos = camera_transform->GetTransform().translation();
 	Eigen::Matrix4f modelview = camera_transform->GetModelView();
-	Eigen::Matrix4f projection = PerspectiveMatrix<float>(80.0f, (float)width / (float)height, 0.1f, 100.0f);
-	Eigen::Matrix4f mvp_matrix = projection * modelview.matrix();
+	Eigen::Matrix4f projection = CameraIntrinsicsMatrix(
+			frame->GetIntrinsicsFocalLength(),
+			frame->GetIntrinsicsCenter(),
+			Eigen::Vector2f(frame->GetDepthWidth(), frame->GetDepthHeight()),
+			0.1f, 100.0f);
+	//projection = PerspectiveMatrix<float>(80.0f, (float)width / (float)height, 0.1f, 100.0f);
+	//std::cout << "projection:\n" << projection << std::endl;
+	Eigen::Matrix4f mvp_matrix = projection * modelview;
 
 	glDisable(GL_DEPTH_TEST);
 	glBindVertexArray(vao);
@@ -426,7 +446,7 @@ void Renderer::Render(GLModel *model, Frame *frame, CameraTransform *camera_tran
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D, model->GetTSDFTex());
 	glDepthMask(GL_TRUE);
-	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, nullptr);
+	//glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, nullptr);
 
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);

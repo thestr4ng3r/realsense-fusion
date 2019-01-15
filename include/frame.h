@@ -45,8 +45,10 @@ class Frame
 
 		GLuint GetVertexTex()	{ return vertex_tex; }
 		GLuint GetNormalTex()	{ return normal_tex; }
-		
-		GLuint GetCameraIntrinsicsBuffer()	{ return camera_intrinsics_buffer; }
+
+		Eigen::Vector2f GetIntrinsicsFocalLength()	{ return intrinsics_focal_length; }
+		Eigen::Vector2f GetIntrinsicsCenter()		{ return intrinsics_center; }
+		GLuint GetCameraIntrinsicsBuffer()			{ return camera_intrinsics_buffer; }
 
 		void ProcessFrame();
 };

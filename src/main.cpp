@@ -76,15 +76,13 @@ int main(int argc, char *argv[])
 		frame.ProcessFrame();
 
 		CameraTransform camera_transform_old = camera_transform;
-		icp.SearchCorrespondences(&frame, &renderer, camera_transform_old, &camera_transform);
+		//icp.SearchCorrespondences(&frame, &renderer, camera_transform_old, &camera_transform);
 
-		integrator.integrate(&frame, &camera_transform);
+		//integrator.integrate(&frame, &camera_transform);
 
 		window.BeginGUI();
-		ImGui::Begin("Hello");
-		ImGui::Text("This scanner is cool.");
-		if(ImGui::Button("click me"))
-			std::cout << "clicked" << std::endl;
+		ImGui::Begin("Info");
+		ImGui::Text("Resolution: %dx%d", frame.GetDepthWidth(), frame.GetDepthHeight());
 		ImGui::End();
 		window.EndGUI();
 
