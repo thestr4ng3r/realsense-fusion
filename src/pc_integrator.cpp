@@ -82,7 +82,13 @@ GLuint PC_Integrator::genComputeProg()
 					//return;
 			}
 
-			float sdf = distance( vec4(cam_pos,1) , v_g) - ReadDepth(depth_map, p, depth_scale) ;
+			float depth = ReadDepth(depth_map, p, depth_scale);
+			if(depth == 0)
+			{
+				return;
+			}
+
+			float sdf = distance( vec4(cam_pos,1) , v_g) - depth;
 
 			//float tsdf = clamp(sdf, -max_dist, max_dist);
 
