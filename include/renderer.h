@@ -2,6 +2,8 @@
 #ifndef _RENDERER_H
 #define _RENDERER_H
 
+#include <Eigen/Core>
+
 class GLModel;
 class Window;
 class CameraTransform;
@@ -33,14 +35,19 @@ class Renderer
 		int fbo_width;
 		int fbo_height;
 
+		Eigen::Matrix4f modelview_matrix;
+		Eigen::Matrix4f projection_matrix;
+
 		void InitResources();
 
 	public:
 		explicit Renderer(Window *window);
 		~Renderer();
 
-		GLuint GetVertexTex()	{ return vertex_tex; }
-		GLuint GetNormalTex()	{ return normal_tex; }
+		GLuint GetVertexTex()					{ return vertex_tex; }
+		GLuint GetNormalTex()					{ return normal_tex; }
+		Eigen::Matrix4f GetModelviewMatrix()	{ return modelview_matrix; }
+		Eigen::Matrix4f GetProjectionMatrix()	{ return projection_matrix; }
 
 		void Render(GLModel *model, Frame *frame, CameraTransform *camera_transform);
 };

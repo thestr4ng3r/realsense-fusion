@@ -138,7 +138,7 @@ void main()
 	//vec4 screen_coord = mvp_matrix * vec4(world_pos_cur, 1.0);
 	//gl_FragDepth = screen_coord.z / screen_coord.w;
 	color_out = vec4(vec3(l), 1.0);
-	vertex_out = (modelview_matrix * vec4(world_pos_cur, 1.0)).xyz;
+	vertex_out = world_pos_cur;
 	normal_out = normal;
 }
 )glsl";
@@ -416,15 +416,15 @@ void Renderer::Render(GLModel *model, Frame *frame, CameraTransform *camera_tran
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	Eigen::Vector3f cam_pos = camera_transform->GetTransform().translation();
-	Eigen::Matrix4f modelview = camera_transform->GetModelView();
-	Eigen::Matrix4f projection = CameraIntrinsicsMatrix(
+	modelview_matrix = camera_transform->GetModelView();
+	projection_matrix = CameraIntrinsicsMatrix(
 			frame->GetIntrinsicsFocalLength(),
 			frame->GetIntrinsicsCenter(),
 			Eigen::Vector2f(frame->GetDepthWidth(), frame->GetDepthHeight()),
 			0.1f, 100.0f);
 	//projection = PerspectiveMatrix<float>(80.0f, (float)width / (float)height, 0.1f, 100.0f);
 	//std::cout << "projection:\n" << projection << std::endl;
-	Eigen::Matrix4f mvp_matrix = projection * modelview;
+	Eigen::Matrix4f mvp_matrix = projection_matrix * modelview_matrix;
 
 	glDisable(GL_DEPTH_TEST);
 	glBindVertexArray(vao);
@@ -445,7 +445,7 @@ void Renderer::Render(GLModel *model, Frame *frame, CameraTransform *camera_tran
 	glUseProgram(program);
 	glCullFace(GL_BACK);
 	glUniformMatrix4fv(mvp_matrix_uniform, 1, GL_FALSE, mvp_matrix.data());
-	glUniformMatrix4fv(modelview_matrix_uniform, 1, GL_FALSE, modelview.data());
+	glUniformMatrix4fv(modelview_matrix_uniform, 1, GL_FALSE, modelview_matrix.data());
 	glUniform3fv(cam_pos_uniform, 1, cam_pos.data());
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D, model->GetTSDFTex());

@@ -2,6 +2,7 @@
 #include "shader_common.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 GLuint CreateComputeShader(const char *source)
 {
@@ -22,6 +23,7 @@ GLuint CreateComputeShader(const char *source)
 		glGetProgramInfoLog(program, log_len, nullptr, log);
 		printf("%s\n", log);
 		delete[] log;
+		exit(1);
 	}
 
 	glDeleteShader(shader);
