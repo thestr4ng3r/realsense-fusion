@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 #error "Build with no input!"
 #endif
 
-	Window window("Integration Test");
+	Window window("Integration Test", 1280, 720);
 	Frame frame;
 
 	bool integrated = false;

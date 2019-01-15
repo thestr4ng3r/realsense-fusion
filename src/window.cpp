@@ -30,7 +30,7 @@ void GLAPIENTRY GLMessageCallback(GLenum source, GLenum type, GLuint id, GLenum 
 	fprintf(stderr, "GL: %s type = %#x, severity = %#x, message = %s\n", type_str, type, severity, message);
 }
 
-Window::Window(const char *title)
+Window::Window(const char *title, int width, int height)
 {
 	if(!glfwInit())
 		throw std::runtime_error("Failed to initialize GLFW.");
@@ -38,7 +38,7 @@ Window::Window(const char *title)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	window = glfwCreateWindow(640, 480, title, nullptr, nullptr);
+	window = glfwCreateWindow(width, height, title, nullptr, nullptr);
 
 	if(!window)
 	{
@@ -87,7 +87,7 @@ void Window::BeginRender()
 	GetSize(&width, &height);
 
 	glViewport(0, 0, width, height);
-	glClearColor(0.0, 0.0, 0.0, 1.0);
+	glClearColor(0.5, 0.5, 0.5, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glCullFace(GL_BACK);
 	glEnable(GL_CULL_FACE);

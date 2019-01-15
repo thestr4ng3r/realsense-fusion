@@ -21,7 +21,7 @@
 
 int main(int argc, char *argv[])
 {
-	Window window("Scanner");
+	Window window("Scanner", 1280, 720);
 
 	Input *input;
 
@@ -76,9 +76,9 @@ int main(int argc, char *argv[])
 		frame.ProcessFrame();
 
 		CameraTransform camera_transform_old = camera_transform;
-		//icp.SearchCorrespondences(&frame, &renderer, camera_transform_old, &camera_transform);
+		icp.SearchCorrespondences(&frame, &renderer, camera_transform_old, &camera_transform);
 
-		//integrator.integrate(&frame, &camera_transform);
+		integrator.integrate(&frame, &camera_transform);
 
 		window.BeginGUI();
 		ImGui::Begin("Info");

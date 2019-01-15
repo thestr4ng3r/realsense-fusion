@@ -14,7 +14,7 @@ class Window
 		bool should_terminate;
 
 	public:
-		Window(const char *title);
+		Window(const char *title, int width, int height);
 		~Window();
 
 		void GetSize(int *width, int *height)	{ glfwGetFramebufferSize(window, width, height); }

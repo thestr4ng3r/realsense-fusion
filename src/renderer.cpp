@@ -28,7 +28,7 @@ Eigen::Matrix<T, 4, 4> PerspectiveMatrix(T fovy, T aspect, T near_clip, T far_cl
 
 Eigen::Matrix4f CameraIntrinsicsMatrix(Eigen::Vector2f f, Eigen::Vector2f center, const Eigen::Vector2f &res, float near_clip, float far_clip)
 {
-	f = f.cwiseQuotient(res);
+	f = f.cwiseQuotient(res) * 2.0f;
 	center = center.cwiseQuotient(res) * 2.0f - Eigen::Vector2f(1.0f, 1.0f);
 	float nmfi = 1.0f / (near_clip - far_clip);
 	Eigen::Matrix4f r;
@@ -412,6 +412,7 @@ void Renderer::Render(GLModel *model, Frame *frame, CameraTransform *camera_tran
 	}
 	glViewport(0, 0, width, height);
 	glDrawBuffer(GL_COLOR_ATTACHMENT0);
+	glClearColor(0.0, 0.0, 0.0, 1.0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	Eigen::Vector3f cam_pos = camera_transform->GetTransform().translation();
@@ -449,7 +450,7 @@ void Renderer::Render(GLModel *model, Frame *frame, CameraTransform *camera_tran
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D, model->GetTSDFTex());
 	glDepthMask(GL_TRUE);
-	//glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, nullptr);
+	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, nullptr);
 
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -457,7 +458,24 @@ void Renderer::Render(GLModel *model, Frame *frame, CameraTransform *camera_tran
 	glDrawBuffer(GL_BACK);
 	int window_width, window_height;
 	window->GetSize(&window_width, &window_height);
-	glBlitFramebuffer(0, 0, width, height, 0, 0, window_width, window_height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+
+	float frame_aspect = (float)width / (float)height;
+	float window_aspect = (float)window_width / (float)window_height;
+	int dst_width, dst_height;
+	if(frame_aspect > window_aspect)
+	{
+		dst_width = window_width;
+		dst_height = (int)((float)dst_width / frame_aspect);
+	}
+	else
+	{
+		dst_height = window_height;
+		dst_width = (int)((float)dst_height * frame_aspect);
+	}
+	int dst_x = (window_width - dst_width) / 2;
+	int dst_y = (window_height - dst_height) / 2;
+
+	glBlitFramebuffer(0, 0, width, height, dst_x, dst_y, dst_x + dst_width, dst_y + dst_height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 	glViewport(0, 0, window_width, window_height);
 }
 
