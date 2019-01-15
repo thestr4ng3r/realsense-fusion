@@ -26,7 +26,7 @@ Eigen::Matrix<T, 4, 4> PerspectiveMatrix(T fovy, T aspect, T near_clip, T far_cl
 	return r;
 }
 
-Eigen::Matrix4f CameraIntrinsicsMatrix(Eigen::Vector2f f, Eigen::Vector2f center, Eigen::Vector2f res, float near_clip, float far_clip)
+Eigen::Matrix4f CameraIntrinsicsMatrix(Eigen::Vector2f f, Eigen::Vector2f center, const Eigen::Vector2f &res, float near_clip, float far_clip)
 {
 	f = f.cwiseQuotient(res);
 	center = center.cwiseQuotient(res) * 2.0f - Eigen::Vector2f(1.0f, 1.0f);
@@ -407,7 +407,10 @@ void Renderer::Render(GLModel *model, Frame *frame, CameraTransform *camera_tran
 				break;
 		}
 		printf("fbo status: %s\n", state_name);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		return;
 	}
+	glViewport(0, 0, width, height);
 	glDrawBuffer(GL_COLOR_ATTACHMENT0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -455,5 +458,6 @@ void Renderer::Render(GLModel *model, Frame *frame, CameraTransform *camera_tran
 	int window_width, window_height;
 	window->GetSize(&window_width, &window_height);
 	glBlitFramebuffer(0, 0, width, height, 0, 0, window_width, window_height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+	glViewport(0, 0, window_width, window_height);
 }
 
