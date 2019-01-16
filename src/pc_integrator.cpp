@@ -5,7 +5,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-#define MAX_TRUNCATION 0.3f
+#define MAX_TRUNCATION 1.f
 #define MIN_TRUNCATION -MAX_TRUNCATION
 #define MAX_WEIGHT 256
 
@@ -98,17 +98,15 @@ GLuint PC_Integrator::genComputeProg()
 
 				float sdf = depth - distance(vec4(cam_pos,1) , v_g);
 
-				//float tsdf = clamp(sdf, -max_dist, max_dist);
-
-				float tsdf;
+				float tsdf = clamp(sdf, min_truncation, max_truncation);
 
 				if (sdf > 0)
 				{
-					float tsdf = min(sdf, max_truncation);
+					float ttsdf = min(sdf, max_truncation);
 				}
 				else
 				{
-					float tsdf = max(sdf, min_truncation);
+					float ttsdf = max(sdf, min_truncation);
 				}
 
 				uint w_last = imageLoad(weight_tex, xyz).x;
@@ -118,7 +116,7 @@ GLuint PC_Integrator::genComputeProg()
 
 				float tsdf_avg = (tsdf_last * w_last + tsdf * w_now) / (w_now + w_last);
 
-				imageStore(tsdf_tex, xyz, vec4(sdf,0.0,0.0,0.0));
+				imageStore(tsdf_tex, xyz, vec4(tsdf,0.0,0.0,0.0));
 				imageStore(weight_tex, xyz, uvec4(w_now,0.0,0.0,0.0));
 			}
 		}		
