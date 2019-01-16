@@ -96,12 +96,12 @@ CPUModel::~CPUModel()
 void CPUModel::Init()
 {
 	tsdf = new float[resolutionX*resolutionY*resolutionZ];
-	weigths = new float[resolutionX*resolutionY*resolutionZ];
+	weigths = new uint16_t[resolutionX*resolutionY*resolutionZ];
 
 	for (int x = 0; x < resolutionX*resolutionY*resolutionZ; x++)
 	{
-		tsdf[x] = -2;
-		weigths[x] = 1;
+		tsdf[x] = 0.3f; // TODO: must be exactly max truncation
+		weigths[x] = 0;
 	}
 	// init with -inf missing here
 }

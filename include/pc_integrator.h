@@ -18,12 +18,15 @@ class PC_Integrator
 		GLModel* glModel;
 
 		GLuint computeHandle;
-		GLuint depth_map_uniform;
-		GLuint cam_modelview_uniform;
-		GLuint cam_pos_uniform;
-		GLuint weight_tex_uniform;
-		GLuint tsdf_tex_uniform;
-		GLuint depth_scale_uniform;
+		GLint depth_map_uniform;
+		GLint cam_modelview_uniform;
+		GLint cam_pos_uniform;
+		GLint weight_tex_uniform;
+		GLint tsdf_tex_uniform;
+		GLint depth_scale_uniform;
+		GLint max_truncation_uniform;
+		GLint min_truncation_uniform;
+		GLint max_weight_uniform;
 
 		int resolutionX;
 		int resolutionY;

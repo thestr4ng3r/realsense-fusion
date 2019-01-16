@@ -5,6 +5,9 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
+#define MAX_TRUNCATION 0.3f
+#define MIN_TRUNCATION -MAX_TRUNCATION
+#define MAX_WEIGHT 256
 
 template<class T>
 Eigen::Matrix<T, 4, 4> PerspectiveMatrix(T fovy, T aspect, T near_clip, T far_clip)
@@ -41,8 +44,7 @@ GLuint PC_Integrator::genComputeProg()
 	GLuint progHandle = glCreateProgram();
 	GLuint cs = glCreateShader(GL_COMPUTE_SHADER);
 
-	static const char *csSrc = 
-		
+	static const char *csSrc =
 		"#version 450 core\n"
 		#include "glsl_common_grid.inl"
 		#include "glsl_common_depth.inl"
@@ -50,7 +52,7 @@ GLuint PC_Integrator::genComputeProg()
 		R"glsl(
 
 		layout(r32f, binding = 0) uniform image3D  tsdf_tex;
-		layout(r32f, binding = 1) uniform image3D  weight_tex;
+		layout(r16ui, binding = 1) uniform uimage3D  weight_tex;
 		layout(binding = 0) uniform usampler2D depth_map;
 
 		uniform mat4 cam_modelview;
@@ -58,6 +60,10 @@ GLuint PC_Integrator::genComputeProg()
 
 		uniform float cellSize;
 		uniform float depth_scale;
+
+		uniform float max_truncation;
+		uniform float min_truncation;
+		uniform uint max_weight;
 
 		layout (local_size_x = 1, local_size_y = 1, local_size_z=1) in;
 		void main() {
@@ -81,7 +87,7 @@ GLuint PC_Integrator::genComputeProg()
 
 				if( abs(v.x) > 1 || abs(v.y) > 1 )
 				{
-						//continue;
+					//continue;
 				}
 
 				float depth = ReadDepth(depth_map, p, depth_scale);
@@ -90,7 +96,7 @@ GLuint PC_Integrator::genComputeProg()
 					continue;
 				}
 
-				float sdf = distance( vec4(cam_pos,1) , v_g) - depth;
+				float sdf = depth - distance(vec4(cam_pos,1) , v_g);
 
 				//float tsdf = clamp(sdf, -max_dist, max_dist);
 
@@ -98,23 +104,22 @@ GLuint PC_Integrator::genComputeProg()
 
 				if (sdf > 0)
 				{
-					float tsdf = min(1.0f, sdf / 0.000001);
+					float tsdf = min(sdf, max_truncation);
 				}
 				else
 				{
-					float tsdf = max(-1.0f, sdf/ -0.000001);
+					float tsdf = max(sdf, min_truncation);
 				}
 
-				float w_last = imageLoad(weight_tex, xyz).x ;
+				uint w_last = imageLoad(weight_tex, xyz).x;
 				float tsdf_last = imageLoad(tsdf_tex, xyz).x;
 
-				float max_weight = 1.0 / 0.0;   //  = inf
-				float w_now = min (max_weight , w_last +1);
+				uint w_now = min(max_weight, w_last + 1);
 
-				float tsdf_avg = ( tsdf_last * w_last + tsdf * w_now ) / w_now ;
+				float tsdf_avg = (tsdf_last * w_last + tsdf * w_now) / (w_now + w_last);
 
-				imageStore(tsdf_tex, xyz, vec4(-sdf,0.0,0.0,0.0));
-				imageStore(weight_tex, xyz, vec4(w_now,0.0,0.0,0.0));
+				imageStore(tsdf_tex, xyz, vec4(sdf,0.0,0.0,0.0));
+				imageStore(weight_tex, xyz, uvec4(w_now,0.0,0.0,0.0));
 			}
 		}		
 	    )glsl";
@@ -151,6 +156,9 @@ GLuint PC_Integrator::genComputeProg()
 	tsdf_tex_uniform = glGetUniformLocation(progHandle, "tsdf_tex");
 	weight_tex_uniform = glGetUniformLocation(progHandle, "weight_tex");
 	depth_scale_uniform = glGetUniformLocation(progHandle, "depth_scale");
+	max_truncation_uniform = glGetUniformLocation(progHandle, "max_truncation");
+	min_truncation_uniform = glGetUniformLocation(progHandle, "min_truncation");
+	max_weight_uniform = glGetUniformLocation(progHandle, "max_weight");
 
 	glUniform1i(tsdf_tex_uniform, 0); //Image Unit 0
 	glUniform1i(weight_tex_uniform, 1);
@@ -173,8 +181,11 @@ void PC_Integrator::integrate(Frame *frame, CameraTransform *camera_transform)
 	glUniform3fv(cam_pos_uniform, 1, cam_pos.data());
 	glUniformMatrix4fv(cam_modelview_uniform, 1, GL_FALSE, modelview.data());
 	glUniform1f(depth_scale_uniform, frame->GetDepthScale());
+	glUniform1f(max_truncation_uniform, MAX_TRUNCATION);
+	glUniform1f(min_truncation_uniform, MIN_TRUNCATION);
+	glUniform1ui(max_weight_uniform, MAX_WEIGHT);
 	glBindImageTexture(0, glModel->GetTSDFTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
-	glBindImageTexture(1, glModel->GetWeightTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
+	glBindImageTexture(1, glModel->GetWeightTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R16UI);
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, this->glModel->GetParamsBuffer());
 	glBindBufferBase(GL_UNIFORM_BUFFER, 1, frame->GetCameraIntrinsicsBuffer());
 

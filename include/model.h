@@ -41,7 +41,7 @@ class CPUModel: public Model
 {
 	private:
 		float *tsdf; //truncated signed distance function
-		float *weigths;
+		uint16_t *weigths;
 
 		int IDX(int x, int y, int z) //3d index -> 1d index
 		{
@@ -57,7 +57,7 @@ class CPUModel: public Model
 		~CPUModel() override;
 
 		float *GetData()					{ return tsdf; }
-		float *GetWeights()					{ return weigths; }
+		uint16_t *GetWeights()				{ return weigths; }
 		void GenerateSphere(float radius, Eigen::Vector3f center);
 		void DebugToLog();
 };
