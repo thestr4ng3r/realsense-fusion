@@ -61,58 +61,61 @@ GLuint PC_Integrator::genComputeProg()
 
 		layout (local_size_x = 1, local_size_y = 1, local_size_z=1) in;
 		void main() {
-			ivec3 xyz = ivec3(gl_GlobalInvocationID.xyz);
-			
-			vec3 gridPos = TexelToGrid(xyz);
-
-			vec4 v_g = vec4(GridToWorld(gridPos),1.0f);
-
-			vec4 v = cam_modelview * v_g;
-
-			ivec2 p = ivec2(ProjectCameraToImage(v.xyz));
-			
-			ivec2 depth_res = textureSize(depth_map, 0); 
-			if( p.x < 0 || p.x > depth_res.x || p.y < 0 || p.y > depth_res.y  )
+			for(uint z=0; z<grid_params.res.z; z++)
 			{
-				return;
+				ivec3 xyz = ivec3(gl_GlobalInvocationID.xy, z);
+
+				vec3 gridPos = TexelToGrid(xyz);
+
+				vec4 v_g = vec4(GridToWorld(gridPos),1.0f);
+
+				vec4 v = cam_modelview * v_g;
+
+				ivec2 p = ivec2(ProjectCameraToImage(v.xyz));
+
+				ivec2 depth_res = textureSize(depth_map, 0);
+				if( p.x < 0 || p.x > depth_res.x || p.y < 0 || p.y > depth_res.y  )
+				{
+					continue;
+				}
+
+				if( abs(v.x) > 1 || abs(v.y) > 1 )
+				{
+						//continue;
+				}
+
+				float depth = ReadDepth(depth_map, p, depth_scale);
+				if(depth == 0)
+				{
+					continue;
+				}
+
+				float sdf = distance( vec4(cam_pos,1) , v_g) - depth;
+
+				//float tsdf = clamp(sdf, -max_dist, max_dist);
+
+				float tsdf;
+
+				if (sdf > 0)
+				{
+					float tsdf = min(1.0f, sdf / 0.000001);
+				}
+				else
+				{
+					float tsdf = max(-1.0f, sdf/ -0.000001);
+				}
+
+				float w_last = imageLoad(weight_tex, xyz).x ;
+				float tsdf_last = imageLoad(tsdf_tex, xyz).x;
+
+				float max_weight = 1.0 / 0.0;   //  = inf
+				float w_now = min (max_weight , w_last +1);
+
+				float tsdf_avg = ( tsdf_last * w_last + tsdf * w_now ) / w_now ;
+
+				imageStore(tsdf_tex, xyz, vec4(-sdf,0.0,0.0,0.0));
+				imageStore(weight_tex, xyz, vec4(w_now,0.0,0.0,0.0));
 			}
-
-			if( abs(v.x) > 1 || abs(v.y) > 1 )
-			{
-					//return;
-			}
-
-			float depth = ReadDepth(depth_map, p, depth_scale);
-			if(depth == 0)
-			{
-				return;
-			}
-
-			float sdf = distance( vec4(cam_pos,1) , v_g) - depth;
-
-			//float tsdf = clamp(sdf, -max_dist, max_dist);
-
-			float tsdf;
-
-			if (sdf > 0)
-			{
-				float tsdf = min(1.0f, sdf / 0.000001);
-			}
-			else 
-			{
-				float tsdf = max(-1.0f, sdf/ -0.000001);
-			}		
-
-			float w_last = imageLoad(weight_tex, xyz).x ; 
-			float tsdf_last = imageLoad(tsdf_tex, xyz).x;
-
-			float max_weight = 1.0 / 0.0;   //  = inf 
-			float w_now = min (max_weight , w_last +1); 
-			
-			float tsdf_avg = ( tsdf_last * w_last + tsdf * w_now ) / w_now ;
-
-			imageStore(tsdf_tex, xyz, vec4(-sdf,0.0,0.0,0.0));
-			imageStore(weight_tex, xyz, vec4(w_now,0.0,0.0,0.0));
 		}		
 	    )glsl";
 
@@ -175,8 +178,7 @@ void PC_Integrator::integrate(Frame *frame, CameraTransform *camera_transform)
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, this->glModel->GetParamsBuffer());
 	glBindBufferBase(GL_UNIFORM_BUFFER, 1, frame->GetCameraIntrinsicsBuffer());
 
-	//todo loop over slide
-	glDispatchCompute(resolutionX, resolutionY, resolutionZ);
+	glDispatchCompute(resolutionX, resolutionY, 1);
 
 }
 
