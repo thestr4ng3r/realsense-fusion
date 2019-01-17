@@ -16,11 +16,11 @@ class GLModel: public Model
 		void Init();
 
 	public:
-		GLModel();
-		GLModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize);
-		GLModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize, Eigen::Vector3f modelOrigin);
+		GLModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize, float max_truncation, float min_truncation);
+		GLModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize, float max_truncation, float min_truncation, Eigen::Vector3f modelOrigin);
 		~GLModel() override;
 
+		void Reset() override;
 		void CopyFrom(CPUModel *cpu_model);
 
 		GLuint GetTSDFTex()			{ return tsdf_tex; }

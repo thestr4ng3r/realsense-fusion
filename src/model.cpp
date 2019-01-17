@@ -5,7 +5,7 @@
 
 
 
-void Model::Init(int resolutionX, int resolutionY, int resolutionZ, float cellSize)
+void Model::Init(int resolutionX, int resolutionY, int resolutionZ, float cellSize, float max_truncation, float min_truncation)
 {
 	if (resolutionX % 2 != 0 || resolutionY % 2 != 0 || resolutionZ % 2 != 0)
 	{
@@ -17,13 +17,16 @@ void Model::Init(int resolutionX, int resolutionY, int resolutionZ, float cellSi
 
 	this->cellSize = cellSize;
 
+	this->max_truncation = max_truncation;
+	this->min_truncation = min_truncation;
+
 }
 
 // Constructor with default origin placement in camera centered coordinate system
 // Origin is located at min (-resX/2, -resY/2 , -resZ/2)
-Model::Model(int resolutionX, int resolutionY, int resolutionZ, float cellSize)
+Model::Model(int resolutionX, int resolutionY, int resolutionZ, float cellSize, float max_truncation, float min_truncation)
 {
-	Init(resolutionX, resolutionY, resolutionZ, cellSize);
+	Init(resolutionX, resolutionY, resolutionZ, cellSize, max_truncation, min_truncation);
 
 	const float cornerX = - static_cast<float>(resolutionX) / 2.0f * cellSize;
 	const float cornerY = - static_cast<float>(resolutionY) / 2.0f * cellSize;
@@ -33,9 +36,9 @@ Model::Model(int resolutionX, int resolutionY, int resolutionZ, float cellSize)
 
 }
 
-Model::Model(int resolutionX, int resolutionY, int resolutionZ, float cellSize, Eigen::Vector3f modelOrigin)
+Model::Model(int resolutionX, int resolutionY, int resolutionZ, float cellSize, float max_truncation, float min_truncation, Eigen::Vector3f modelOrigin)
 {
-	Init(resolutionX, resolutionY, resolutionZ, cellSize);
+	Init(resolutionX, resolutionY, resolutionZ, cellSize, max_truncation, min_truncation);
 
 	//assert model in grid
 
@@ -75,14 +78,14 @@ Eigen::Vector3f Model::TexelToGrid(Eigen::Vector3i pos)
 
 
 
-CPUModel::CPUModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize)
-	: Model(resolutionX, resolutionY, resolutionZ, cellSize)
+CPUModel::CPUModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize, float max_truncation, float min_truncation)
+	: Model(resolutionX, resolutionY, resolutionZ, cellSize, max_truncation, min_truncation)
 {
 	Init();
 }
 
-CPUModel::CPUModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize, Eigen::Vector3f modelOrigin)
-	: Model(resolutionX, resolutionY, resolutionZ, cellSize, modelOrigin)
+CPUModel::CPUModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize, float max_truncation, float min_truncation, Eigen::Vector3f modelOrigin)
+	: Model(resolutionX, resolutionY, resolutionZ, cellSize, max_truncation, min_truncation, modelOrigin)
 {
 	Init();
 }
@@ -93,17 +96,20 @@ CPUModel::~CPUModel()
 	delete [] weigths;
 }
 
+void CPUModel::Reset()
+{
+	for (int x = 0; x < resolutionX*resolutionY*resolutionZ; x++)
+	{
+		tsdf[x] = max_truncation;
+		weigths[x] = 0;
+	}
+}
+
 void CPUModel::Init()
 {
 	tsdf = new float[resolutionX*resolutionY*resolutionZ];
 	weigths = new uint16_t[resolutionX*resolutionY*resolutionZ];
-
-	for (int x = 0; x < resolutionX*resolutionY*resolutionZ; x++)
-	{
-		tsdf[x] = 0.3f; // TODO: must be exactly max truncation
-		weigths[x] = 0;
-	}
-	// init with -inf missing here
+	Reset();
 }
 
 void CPUModel::GenerateSphere(float radius, Eigen::Vector3f center)

@@ -41,16 +41,7 @@ int main(int argc, char *argv[])
 
 	Frame frame;
 
-	GLModel gl_model(128, 128, 128, 1.0f / 128.0f);
-	{
-		CPUModel test_model(
-				gl_model.GetResolutionX(),
-				gl_model.GetResolutionY(),
-				gl_model.GetResolutionZ(),
-				gl_model.GetCellSize());
-		test_model.GenerateSphere(0.2f, Eigen::Vector3f(0.0f, 0.0f, 0.0f));
-		gl_model.CopyFrom(&test_model);
-	}
+	GLModel gl_model(128, 128, 128, 1.0f / 128.0f, 0.3f, -0.3f);
 
 	Renderer renderer(&window);
 
@@ -83,6 +74,8 @@ int main(int argc, char *argv[])
 		window.BeginGUI();
 		ImGui::Begin("Info");
 		ImGui::Text("Resolution: %dx%d", frame.GetDepthWidth(), frame.GetDepthHeight());
+		if(ImGui::Button("Reset Model"))
+			gl_model.Reset();
 		ImGui::End();
 		window.EndGUI();
 

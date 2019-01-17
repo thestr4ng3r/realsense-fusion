@@ -2,14 +2,14 @@
 #include "gl_model.h"
 
 
-GLModel::GLModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize)
-	: Model(resolutionX, resolutionY, resolutionZ, cellSize)
+GLModel::GLModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize, float max_truncation, float min_truncation)
+	: Model(resolutionX, resolutionY, resolutionZ, cellSize, max_truncation, min_truncation)
 {
 	Init();
 }
 
-GLModel::GLModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize, Eigen::Vector3f modelOrigin)
-	: Model(resolutionX, resolutionY, resolutionZ, cellSize, modelOrigin)
+GLModel::GLModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize, float max_truncation, float min_truncation, Eigen::Vector3f modelOrigin)
+	: Model(resolutionX, resolutionY, resolutionZ, cellSize, max_truncation, min_truncation, modelOrigin)
 {
 	Init();
 }
@@ -56,6 +56,16 @@ void GLModel::Init()
 	*((float *)(buf + 6)) = modelOrigin.z();
 	buf[7] = 0;
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(buf), buf, GL_STATIC_DRAW);
+
+	Reset();
+}
+
+void GLModel::Reset()
+{
+	float tsdf_reset[] = { max_truncation, 0.0f, 0.0f, 0.0f };
+	glClearTexImage(tsdf_tex, 0, GL_RGBA, GL_FLOAT, tsdf_reset);
+	uint16_t weight_reset[] = { 0, 0, 0, 0 };
+	glClearTexImage(weight_tex, 0, GL_RGBA_INTEGER, GL_UNSIGNED_SHORT, weight_reset);
 }
 
 void GLModel::CopyFrom(CPUModel *cpu_model)
@@ -71,5 +81,4 @@ void GLModel::CopyFrom(CPUModel *cpu_model)
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_3D, weight_tex);
 	glTexImage3D(GL_TEXTURE_3D, 0, GL_R16UI, resolutionX, resolutionY, resolutionZ, 0, GL_RED_INTEGER, GL_UNSIGNED_SHORT, cpu_model->GetWeights());
-
 }
