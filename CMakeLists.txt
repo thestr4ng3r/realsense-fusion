@@ -13,6 +13,8 @@ set(HEADER_FILES
 		include/frame.h
 		include/input.h
 		include/model.h
+		include/marching_cubes.h
+		include/mesh.h
 		include/realsense_input.h
 		include/renderer.h
 		include/window.h
@@ -26,6 +28,7 @@ set(SOURCE_FILES
 		src/realsense_input.cpp
 		src/frame.cpp
 		src/model.cpp
+		src/marching_cubes.cpp
 		src/renderer.cpp
 		src/window.cpp
 		src/gl_model.cpp
