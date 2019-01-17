@@ -5,8 +5,6 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-#define MAX_TRUNCATION 1.f
-#define MIN_TRUNCATION -MAX_TRUNCATION
 #define MAX_WEIGHT 256
 
 template<class T>
@@ -179,8 +177,8 @@ void PC_Integrator::integrate(Frame *frame, CameraTransform *camera_transform)
 	glUniform3fv(cam_pos_uniform, 1, cam_pos.data());
 	glUniformMatrix4fv(cam_modelview_uniform, 1, GL_FALSE, modelview.data());
 	glUniform1f(depth_scale_uniform, frame->GetDepthScale());
-	glUniform1f(max_truncation_uniform, MAX_TRUNCATION);
-	glUniform1f(min_truncation_uniform, MIN_TRUNCATION);
+	glUniform1f(max_truncation_uniform, glModel->GetMaxTruncation());
+	glUniform1f(min_truncation_uniform, glModel->GetMinTruncation());
 	glUniform1ui(max_weight_uniform, MAX_WEIGHT);
 	glBindImageTexture(0, glModel->GetTSDFTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
 	glBindImageTexture(1, glModel->GetWeightTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R16UI);
