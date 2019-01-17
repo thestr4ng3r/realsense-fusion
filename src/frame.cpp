@@ -39,9 +39,9 @@ void main()
 		else
 			dx -= pos;
 
-		vec3 dy = VertexForCoords(coords + ivec2(0, 1), depth);
+		vec3 dy = VertexForCoords(coords + ivec2(0, -1), depth);
 		if(depth == 0.0)
-			dy = vec3(0.0, -1.0, 0.0);
+			dy = vec3(0.0, 1.0, 0.0);
 		else
 			dy -= pos;
 

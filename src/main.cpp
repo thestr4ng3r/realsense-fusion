@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
 	CameraTransform camera_transform;
 
 	Eigen::Affine3f t = Eigen::Affine3f::Identity();
-	t.translate(Eigen::Vector3f(0.0f, 0.0f, 1.5f));
+	t.translate(Eigen::Vector3f(0.0f, 0.0f, 0.7f));
 	camera_transform.SetTransform(t);
 
 	ICP icp;

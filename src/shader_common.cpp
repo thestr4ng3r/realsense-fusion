@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <stdexcept>
+
 GLuint CreateComputeShader(const char *source)
 {
 	GLuint shader = glCreateShader(GL_COMPUTE_SHADER);
@@ -23,7 +25,7 @@ GLuint CreateComputeShader(const char *source)
 		glGetProgramInfoLog(program, log_len, nullptr, log);
 		printf("%s\n", log);
 		delete[] log;
-		exit(1);
+		throw std::runtime_error("Failed to compile shader.");
 	}
 
 	glDeleteShader(shader);

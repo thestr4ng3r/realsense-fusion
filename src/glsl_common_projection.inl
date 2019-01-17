@@ -10,7 +10,7 @@ layout(std140, binding=1) uniform CameraIntrinsicsBlock
 // returns a pixel coordinate in [0, camera_intrinsics.res]
 vec2 ProjectCameraToImage(vec3 pos)
 {
-	vec2 v = pos.xy / pos.z;
+	vec2 v = (pos.xy * vec2(1.0, -1.0)) / -pos.z;
 	// TODO: distortion here
 	v *= camera_intrinsics.focal_length;
 	v += camera_intrinsics.center;
@@ -24,6 +24,6 @@ vec3 DeprojectImageToCamera(vec2 pos, float depth)
 	vec2 v = pos - camera_intrinsics.center;
 	v /= camera_intrinsics.focal_length;
 	// TODO: distortion here
-	return vec3(v, 1.0) * depth;
+	return vec3(v, -1.0) * depth * vec3(1.0, -1.0, 1.0);
 }
 )glsl"

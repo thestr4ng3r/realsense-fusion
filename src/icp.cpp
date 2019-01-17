@@ -6,12 +6,18 @@
 #include "renderer.h"
 
 #define RESIDUAL_COMPONENTS 7
-#define ICP_DISTANCE_THRESHOLD 100.0f
+#define ICP_DISTANCE_THRESHOLD 0.3f
 #define ICP_ANGLE_COS_TRESHOLD 0.0f
 
+#define STRHELPER(x) #x
+#define TOSTR(x) STRHELPER(x)
+
 static const char *corr_shader_code =
-R"glsl(
-#version 450 core
+"#version 450 core\n"
+#ifdef ICP_DEBUG_TEX
+"#define ICP_DEBUG_TEX\n"
+#endif
+"#line " TOSTR(__LINE__) "\n" R"glsl(
 
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
@@ -36,6 +42,10 @@ layout(std430, binding = 0) buffer residuals_out
 	float residuals[];
 };
 
+#ifdef ICP_DEBUG_TEX
+layout(rgba32f, binding = 0) uniform image2D debug_out;
+#endif
+
 ivec2 coord;
 
 void StoreResidual(vec3 a, vec3 b, float c)
@@ -50,9 +60,9 @@ void StoreResidual(vec3 a, vec3 b, float c)
 	residuals[base+6] = c;
 }
 
-void StoreNopResidual(float v)
+void StoreNopResidual()
 {
-	StoreResidual(vec3(v), vec3(0.0), 0.0);
+	StoreResidual(vec3(0.0), vec3(0.0), 0.0);
 }
 
 void main()
@@ -64,34 +74,35 @@ void main()
 	vec3 vertex_current_camera = texelFetch(vertex_tex_current, coord, 0).xyz;
 	if(isinf(vertex_current_camera.x))
 	{
-		StoreNopResidual(1.0);
+		StoreNopResidual();
 		return;
 	}
 
 	vec3 vertex_current_world = (transform_current * vec4(vertex_current_camera, 1.0)).xyz;
 	vec3 vertex_current_camera_prev = (modelview_prev * vec4(vertex_current_world, 1.0)).xyz;
 	vec4 vertex_current_image_prev_p = projection_prev * vec4(vertex_current_camera_prev, 1.0);
-	vec2 vertex_current_image_prev = vertex_current_image_prev_p.xy / vertex_current_image_prev_p.w;
+	vec2 vertex_current_image_prev = (vertex_current_image_prev_p.xy / vertex_current_image_prev_p.w) * 0.5 + 0.5;
 	if(vertex_current_image_prev.x < 0.0 || vertex_current_image_prev.y < 0.0
-		|| vertex_current_image_prev.x > 1.0 || vertex_current_image_prev.y < 1.0
-		|| vertex_current_camera_prev.z < 0.0)
+		|| vertex_current_image_prev.x > 1.0 || vertex_current_image_prev.y > 1.0
+		|| vertex_current_camera_prev.z > 0.0)
 	{
-		StoreNopResidual(2.0);
+		StoreNopResidual();
 		return;
 	}
 
 	vec3 vertex_prev_world = texture(vertex_tex_prev, vertex_current_image_prev).xyz;
 	if(isinf(vertex_prev_world.x))
 	{
-		StoreNopResidual(3.0);
+		StoreNopResidual();
 		return;
 	}
+
 
 	vec3 dir_world = vertex_current_world - vertex_prev_world;
 	float dist_sq = dot(dir_world, dir_world);
 	if(dist_sq > distance_sq_threshold)
 	{
-		StoreNopResidual(4.0);
+		StoreNopResidual();
 		return;
 	}
 
@@ -101,9 +112,13 @@ void main()
 	float angle_cos = dot(normal_current_world, normal_prev_world);
 	if(angle_cos < angle_cos_threshold)
 	{
-		StoreNopResidual(5.0);
+		StoreNopResidual();
 		return;
 	}
+
+#ifdef ICP_DEBUG_TEX
+	imageStore(debug_out, coord, vec4(dir_world, 43.0));
+#endif
 
 	StoreResidual(
 		cross(vertex_current_world, normal_prev_world),
@@ -126,14 +141,28 @@ ICP::ICP()
 	glObjectLabel(GL_PROGRAM, corr_program, -1, "ICP::corr_program");
 
 	glGenBuffers(1, &residuals_buffer);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, residuals_buffer);
 	glObjectLabel(GL_BUFFER, residuals_buffer, -1, "ICP::residuals_buffer");
 	residuals_buffer_size = 0;
+
+#ifdef ICP_DEBUG_TEX
+	glGenTextures(1, &debug_tex);
+	glBindTexture(GL_TEXTURE_2D, debug_tex);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glObjectLabel(GL_TEXTURE, debug_tex, -1, "ICP::debug_tex");
+#endif
 }
 
 ICP::~ICP()
 {
 	glDeleteProgram(corr_program);
 	glDeleteBuffers(1, &residuals_buffer);
+#ifdef ICP_DEBUG_TEX
+	glDeleteTextures(1, &debug_tex);
+#endif
 }
 
 void ICP::SearchCorrespondences(Frame *frame, Renderer *renderer, const CameraTransform &cam_transform_old, CameraTransform *cam_transform_new)
@@ -147,13 +176,26 @@ void ICP::SearchCorrespondences(Frame *frame, Renderer *renderer, const CameraTr
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, residuals_buffer);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, residuals_buffer_size, nullptr, GL_DYNAMIC_COPY);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
 	}
+
+#ifdef ICP_DEBUG_TEX
+	if(debug_tex_width != frame->GetDepthWidth() || debug_tex_height != frame->GetDepthHeight())
+	{
+		debug_tex_width = frame->GetDepthWidth();
+		debug_tex_height = frame->GetDepthHeight();
+		glBindTexture(GL_TEXTURE_2D, debug_tex);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, debug_tex_width, debug_tex_height, 0, GL_RGBA, GL_FLOAT, nullptr);
+	}
+	glBindImageTexture(0, debug_tex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+#endif
 
 	cam_transform_new->SetTransform(cam_transform_old.GetTransform());
 
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, residuals_buffer);
 
 	glUseProgram(corr_program);
+
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, renderer->GetVertexTex());
 	glActiveTexture(GL_TEXTURE1);
@@ -172,6 +214,7 @@ void ICP::SearchCorrespondences(Frame *frame, Renderer *renderer, const CameraTr
 	glUniformMatrix4fv(corr_transform_current_uniform, 1, GL_FALSE, cam_transform_new->GetTransform().matrix().data());
 
 	glUniform1i(corr_image_width_uniform, frame->GetDepthWidth());
+
 
 	glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
 	glDispatchCompute(static_cast<GLuint>(frame->GetDepthWidth()), static_cast<GLuint>(frame->GetDepthHeight()), 1);

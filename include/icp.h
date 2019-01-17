@@ -8,6 +8,8 @@ class Frame;
 class CameraTransform;
 class Renderer;
 
+//#define ICP_DEBUG_TEX
+
 class ICP
 {
 	private:
@@ -21,6 +23,12 @@ class ICP
 
 		GLuint residuals_buffer;
 		size_t residuals_buffer_size;
+
+#ifdef ICP_DEBUG_TEX
+		GLuint debug_tex;
+		int debug_tex_width;
+		int debug_tex_height;
+#endif
 
 	public:
 		ICP();
