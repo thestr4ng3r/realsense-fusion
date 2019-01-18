@@ -114,7 +114,7 @@ GLuint PC_Integrator::genComputeProg()
 
 				float tsdf_avg = (tsdf_last * w_last + tsdf * w_now) / (w_now + w_last);
 
-				imageStore(tsdf_tex, xyz, vec4(tsdf,0.0,0.0,0.0));
+				imageStore(tsdf_tex, xyz, vec4(tsdf_avg,0.0,0.0,0.0));
 				imageStore(weight_tex, xyz, uvec4(w_now,0.0,0.0,0.0));
 			}
 		}		
