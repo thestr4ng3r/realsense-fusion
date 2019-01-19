@@ -14,8 +14,8 @@
 #include "pc_integrator.h"
 #include "icp.h"
 
-#include <pcl/visualization/cloud_viewer.h>
-#include <pcl/filters/passthrough.h>
+//#include <pcl/visualization/cloud_viewer.h>
+//#include <pcl/filters/passthrough.h>
 
 #include "imgui.h"
 
@@ -47,9 +47,9 @@ int main(int argc, char *argv[])
 
 	CameraTransform camera_transform;
 
-	Eigen::Affine3f t = Eigen::Affine3f::Identity();
-	t.translate(Eigen::Vector3f(0.0f, 0.0f, 0.7f));
-	camera_transform.SetTransform(t);
+	Eigen::Affine3f reset_transform = Eigen::Affine3f::Identity();
+	reset_transform.translate(Eigen::Vector3f(0.0f, 0.0f, 0.7f));
+	camera_transform.SetTransform(reset_transform);
 
 	ICP icp;
 
@@ -68,15 +68,18 @@ int main(int argc, char *argv[])
 
 		CameraTransform camera_transform_old = camera_transform;
 		icp.SearchCorrespondences(&frame, &renderer, camera_transform_old, &camera_transform);
-		//icp.SolveMatrix(frame.GetDepthWidth() * frame.GetDepthHeight(), &camera_transform);
+		icp.SolveMatrix(frame.GetDepthWidth() * frame.GetDepthHeight(), &camera_transform);
 
 		integrator.integrate(&frame, &camera_transform);
 
 		window.BeginGUI();
 		ImGui::Begin("Info");
 		ImGui::Text("Resolution: %dx%d", frame.GetDepthWidth(), frame.GetDepthHeight());
-		if(ImGui::Button("Reset Model"))
+		if(ImGui::Button("Reset Model and Transform"))
+		{
 			gl_model.Reset();
+			camera_transform.SetTransform(reset_transform);
+		}
 		ImGui::End();
 		window.EndGUI();
 

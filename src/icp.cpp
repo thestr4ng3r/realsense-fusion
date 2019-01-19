@@ -302,10 +302,26 @@ void ICP::SolveMatrix(int residuals_count, CameraTransform *cam_transform_new)
 	Eigen::Matrix<float, MATRIX_ROWS, MATRIX_ROWS> A = matrix.block<MATRIX_ROWS, MATRIX_ROWS>(0, 0);
 	Eigen::Matrix<float, MATRIX_ROWS, 1> b = matrix.col(6);
 
-	std::cout << "A:\n" << A << std::endl;
-	std::cout << "b:\n" << b << std::endl;
+	// TODO: learn what this actually means, currently copied from https://github.com/chrdiller/KinectFusionLib/blob/master/src/pose_estimation.cpp#L54
+	if(A.determinant() < 100000 /*1e-15*/ || std::isnan(A.determinant()))
+		return;
+
+	//std::cout << "A:\n" << A << std::endl;
+	//std::cout << "b:\n" << b << std::endl;
 
 	Eigen::Matrix<float, MATRIX_ROWS, 1> result = A.colPivHouseholderQr().solve(b);
 
-	std::cout << "result:\n" << result << std::endl;
+	//std::cout << "result:\n" << result << std::endl;
+
+	/*auto rotation_delta = Eigen::AngleAxisf(result(2), Eigen::Vector3f::UnitZ())
+		* Eigen::AngleAxisf(result(1), Eigen::Vector3f::UnitY())
+		* Eigen::AngleAxisf(result(0), Eigen::Vector3f::UnitX());
+	auto translation_delta = result.tail<3>();*/
+
+	Eigen::Affine3f transform = cam_transform_new->GetTransform();
+	transform.rotate(Eigen::AngleAxisf(result(0), Eigen::Vector3f::UnitX()));
+	transform.rotate(Eigen::AngleAxisf(result(1), Eigen::Vector3f::UnitY()));
+	transform.rotate(Eigen::AngleAxisf(result(2), Eigen::Vector3f::UnitZ()));
+	transform.translate(result.tail<3>());
+	cam_transform_new->SetTransform(transform);
 }
