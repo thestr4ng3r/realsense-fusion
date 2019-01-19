@@ -78,7 +78,9 @@ Window::~Window()
 void Window::Update()
 {
 	glfwPollEvents();
-	should_terminate = static_cast<bool>(glfwWindowShouldClose(window));
+
+	should_terminate = should_terminate || glfwGetKey(window, GLFW_KEY_ESCAPE);
+	should_terminate = should_terminate || static_cast<bool>(glfwWindowShouldClose(window));
 }
 
 void Window::BeginRender()

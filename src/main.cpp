@@ -55,6 +55,8 @@ int main(int argc, char *argv[])
 
 	PC_Integrator integrator(&gl_model);
 
+	bool enable_tracking = true;
+
 	while(!window.GetShouldTerminate())
 	{
 		window.Update();
@@ -67,8 +69,13 @@ int main(int argc, char *argv[])
 		frame.ProcessFrame();
 
 		CameraTransform camera_transform_old = camera_transform;
-		icp.SearchCorrespondences(&frame, &renderer, camera_transform_old, &camera_transform);
-		icp.SolveMatrix(frame.GetDepthWidth() * frame.GetDepthHeight(), &camera_transform);
+		for(int i=0; i<5; i++)
+		{
+			icp.SearchCorrespondences(&frame, &renderer, camera_transform_old, &camera_transform);
+			icp.SolveMatrix(&camera_transform);
+		}
+		if(!enable_tracking)
+			camera_transform = camera_transform_old;
 
 		integrator.integrate(&frame, &camera_transform);
 
@@ -80,6 +87,7 @@ int main(int argc, char *argv[])
 			gl_model.Reset();
 			camera_transform.SetTransform(reset_transform);
 		}
+		ImGui::Checkbox("Enable Tracking", &enable_tracking);
 		ImGui::End();
 		window.EndGUI();
 

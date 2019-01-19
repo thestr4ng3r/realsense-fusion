@@ -8,7 +8,7 @@ class Frame;
 class CameraTransform;
 class Renderer;
 
-//#define ICP_DEBUG_TEX
+#define ICP_DEBUG_TEX
 
 class ICP
 {
@@ -19,10 +19,10 @@ class ICP
 		GLint corr_modelview_prev_uniform;
 		GLint corr_projection_prev_uniform;
 		GLint corr_transform_current_uniform;
-		GLint corr_image_width_uniform;
+		GLint corr_image_res_uniform;
 
 		GLuint residuals_buffer;
-		size_t residuals_buffer_size;
+		unsigned int residuals_count;
 
 		GLuint reduce_program;
 		GLint reduce_residuals_count_uniform;
@@ -40,7 +40,7 @@ class ICP
 		virtual ~ICP();
 
 		void SearchCorrespondences(Frame *frame, Renderer *renderer, const CameraTransform &cam_transform_old, CameraTransform *cam_transform_new);
-		void SolveMatrix(int residuals_count, CameraTransform *cam_transform_new);
+		void SolveMatrix(CameraTransform *cam_transform_new);
 };
 
 #endif //_ICP_H
