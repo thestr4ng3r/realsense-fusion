@@ -17,6 +17,7 @@ int main(int argc, char *argv[])
 	Input *input;
 #if defined(ENABLE_INPUT_REALSENSE)
 	input = new RealSenseInput();
+	input->setFilterActive(true);
 #if defined(ENABLE_INPUT_KINECT)
 	//#warning "Building with both RealSense and Kinect. Using RealSense."
 #endif
@@ -72,11 +73,8 @@ int main(int argc, char *argv[])
 			continue;
 		}
 
-		/*if (!integrated)
-		{*/
-			integrator.integrate(&frame, &camera_transform);
-			integrated = true;
-		//}
+		integrator.integrate(&frame, &camera_transform);
+		integrated = true;
 
 		window.BeginRender();
 		renderer.Render(&glmodel, &frame, &camera_transform);

@@ -11,6 +11,7 @@ RealSenseInput::RealSenseInput(const rs2::config &config)
 	{
 		auto profile = pipe.start(config);
 		intrinsics = profile.get_stream(RS2_STREAM_DEPTH).as<rs2::video_stream_profile>().get_intrinsics();
+		//IntrinsicsColor = profile.get_stream(RS2_STREAM_COLOR).as<rs2::video_stream_profile>().get_intrinsics();
 		auto sensor = profile.get_device().first<rs2::depth_sensor>();
 		depth_scale = sensor.get_depth_scale();
 	}
@@ -38,12 +39,20 @@ bool RealSenseInput::WaitForFrame(Frame *frame)
 			std::cerr << "Frame from RealSense has invalid stream type or format." << std::endl;
 			return false;
 		}
+		if (filters_active)
+		{
+			
+			//rs2::decimation_filter dec_filter;  // Decimation - "Intelligently reduces the resolution of a depth frame." dont sure if we want that
+			rs2::spatial_filter spat_filter;    // Spatial    - edge-preserving spatial smoothing
+			rs2::temporal_filter temp_filter;   // Temporal   - reduces temporal noise
+			//depth = dec_filter.process(depth);
+			depth = spat_filter.process(depth);
+			depth = temp_filter.process(depth);
+			
+		}
 		frame->SetDepthMap(depth.get_width(), depth.get_height(), (GLushort *)depth.get_data(), depth_scale,
 				Eigen::Vector2f(intrinsics.fx, intrinsics.fy), Eigen::Vector2f(intrinsics.ppx, intrinsics.ppy));
-		//frame->depthResolutionX = depth.get_width();
-		//frame->depthResolutionY = depth.get_height();
-		//frame->SetDepthMap((float*)depth.get_data());  //Have to see if that works
-		//points = pc.calculate(depth);
+		
 	}
 	catch(const rs2::error &e)
 	{

@@ -15,7 +15,11 @@ class RealSenseInput : public Input
 		//rs2::points points;
 
 		rs2_intrinsics intrinsics;
+		rs2_intrinsics IntrinsicsColor;
 		float depth_scale;
+
+		bool filters_active = false;
+
 
 	public:
 		RealSenseInput(const rs2::config &config = rs2::config());
@@ -27,6 +31,13 @@ class RealSenseInput : public Input
 		float GetPpy() { return intrinsics.ppy; }
 		float GetFx() { return intrinsics.fx; }
 		float GetFy() { return intrinsics.fy; }
+
+		float GetPpxColor() { return IntrinsicsColor.ppx; }
+		float GetPpyColor() { return IntrinsicsColor.ppy; }
+		float GetFxColor() { return IntrinsicsColor.fx; }
+		float GetFyColor() { return IntrinsicsColor.fy; }
+
+		void setFilterActive(bool set) { filters_active = set; }
 };
 
 #endif //INPUT_H
