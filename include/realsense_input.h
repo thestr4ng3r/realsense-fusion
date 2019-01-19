@@ -19,7 +19,7 @@ class RealSenseInput : public Input
 		float depth_scale;
 
 		bool filters_active = false;
-
+		bool color_active = false;
 
 	public:
 		RealSenseInput(const rs2::config &config = rs2::config());
@@ -38,6 +38,7 @@ class RealSenseInput : public Input
 		float GetFyColor() { return IntrinsicsColor.fy; }
 
 		void setFilterActive(bool set) { filters_active = set; }
+		void setColorActive(bool set) { color_active = set; }
 };
 
 #endif //INPUT_H

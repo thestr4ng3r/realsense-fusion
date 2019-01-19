@@ -52,6 +52,14 @@ bool RealSenseInput::WaitForFrame(Frame *frame)
 		}
 		frame->SetDepthMap(depth.get_width(), depth.get_height(), (GLushort *)depth.get_data(), depth_scale,
 				Eigen::Vector2f(intrinsics.fx, intrinsics.fy), Eigen::Vector2f(intrinsics.ppx, intrinsics.ppy));
+
+		if (color_active)
+		{
+			auto color = frames.get_color_frame();
+			frame->SetColorMap(color.get_width(), color.get_height(), (GLushort *)color.get_data(),
+				Eigen::Vector2f(intrinsics.fx, intrinsics.fy), Eigen::Vector2f(intrinsics.ppx, intrinsics.ppy));
+		}
+		
 		
 	}
 	catch(const rs2::error &e)

@@ -17,6 +17,7 @@ class Frame
 		GLuint depth_tex;
 		GLuint vertex_tex;
 		GLuint normal_tex;
+		GLuint color_tex;
 
 		int depth_width;
 		int depth_height;
@@ -24,7 +25,10 @@ class Frame
 
 		Eigen::Vector2f intrinsics_focal_length;
 		Eigen::Vector2f intrinsics_center;
+		Eigen::Vector2f intrinsics_color_focal_length;
+		Eigen::Vector2f intrinsics_color_center;
 		GLuint camera_intrinsics_buffer;
+		GLuint camera_intrinsics_colorbuffer;
 
 		GLuint process_program;
 		GLint depth_scale_uniform;
@@ -32,10 +36,6 @@ class Frame
 	public:
 		Frame();
 		~Frame();
-
-		//pcl::PointCloud<pcl::PointXYZ>::Ptr GetCloud()	{ return cloud; }
-		//float* GetDepthMap() { return depthMap;  }
-		//void SetDepthMap(float* depthmap) { this->depthMap = depthMap; }
 
 		void SetDepthMap(int width, int height, GLushort *data, float depth_scale, const Eigen::Vector2f &focal_length, const Eigen::Vector2f &center);
 		GLuint GetDepthTex()	{ return depth_tex; }
@@ -45,10 +45,16 @@ class Frame
 
 		GLuint GetVertexTex()	{ return vertex_tex; }
 		GLuint GetNormalTex()	{ return normal_tex; }
+		GLuint GetColorTex()	{ return color_tex; }
 
 		Eigen::Vector2f GetIntrinsicsFocalLength()	{ return intrinsics_focal_length; }
 		Eigen::Vector2f GetIntrinsicsCenter()		{ return intrinsics_center; }
 		GLuint GetCameraIntrinsicsBuffer()			{ return camera_intrinsics_buffer; }
+
+		Eigen::Vector2f GetIntrinsicsColorFocalLength() { return intrinsics_color_focal_length; }
+		Eigen::Vector2f GetIntrinsicsColorCenter() { return intrinsics_color_center; }
+		GLuint GetCameraIntrinsicsColorBuffer() { return camera_intrinsics_colorbuffer; }
+
 
 		void ProcessFrame();
 };

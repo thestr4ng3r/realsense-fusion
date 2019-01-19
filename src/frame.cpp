@@ -85,7 +85,16 @@ Frame::Frame() :
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
+	glGenTextures(1, &color_tex);
+	glBindTexture(GL_TEXTURE_2D, color_tex);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+
 	glGenBuffers(1, &camera_intrinsics_buffer);
+	glGenBuffers(1, &camera_intrinsics_colorbuffer);
 
 	process_program = CreateComputeShader(process_shader_code);
 	depth_scale_uniform = glGetUniformLocation(process_program, "depth_scale");
@@ -96,7 +105,9 @@ Frame::~Frame()
 	glDeleteTextures(1, &depth_tex);
 	glDeleteTextures(1, &vertex_tex);
 	glDeleteTextures(1, &normal_tex);
+	glDeleteTextures(1, &color_tex);
 	glDeleteBuffers(1, &camera_intrinsics_buffer);
+	glDeleteBuffers(1, &camera_intrinsics_colorbuffer);
 	glDeleteProgram(process_program);
 }
 
@@ -134,6 +145,28 @@ void Frame::SetDepthMap(int width, int height, GLushort *data, float depth_scale
 	*(buf + 7) = 0;
 
 	glBindBuffer(GL_UNIFORM_BUFFER, camera_intrinsics_buffer);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(buf), buf, GL_DYNAMIC_DRAW);
+}
+
+void Frame::SetColorMap(int width, int height, GLushort *data, const Eigen::Vector2f &focal_length, const Eigen::Vector2f &center)
+{
+	glBindTexture(GL_TEXTURE_2D, color_tex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_INT, data);
+
+	intrinsics_color_focal_length = focal_length;
+	intrinsics_color_center = center;
+
+	uint32_t buf[8];
+	*((float *)(buf + 0)) = intrinsics_color_focal_length.x();
+	*((float *)(buf + 1)) = intrinsics_color_focal_length.y();
+	*((float *)(buf + 2)) = intrinsics_color_center.x();
+	*((float *)(buf + 3)) = intrinsics_color_center.y();
+	*(buf + 4) = (uint32_t)width;
+	*(buf + 5) = (uint32_t)height;
+	*(buf + 6) = 0;
+	*(buf + 7) = 0;
+
+	glBindBuffer(GL_UNIFORM_BUFFER, camera_intrinsics_colorbuffer);
 	glBufferData(GL_UNIFORM_BUFFER, sizeof(buf), buf, GL_DYNAMIC_DRAW);
 }
 
