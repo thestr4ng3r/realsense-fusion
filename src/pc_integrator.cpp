@@ -106,13 +106,16 @@ GLuint PC_Integrator::genComputeProg()
 				{
 					float ttsdf = max(sdf, min_truncation);
 				}
+				
+				const int add_weight = 1;
 
 				uint w_last = imageLoad(weight_tex, xyz).x;
 				float tsdf_last = imageLoad(tsdf_tex, xyz).x;
 
-				uint w_now = min(max_weight, w_last + 1);
 
-				float tsdf_avg = (tsdf_last * w_last + tsdf * w_now) / (w_now + w_last);
+				float tsdf_avg = (tsdf_last * w_last + tsdf * add_weight) / (w_last + add_weight);
+
+				uint w_now = min(max_weight, w_last + 1);
 
 				imageStore(tsdf_tex, xyz, vec4(tsdf_avg,0.0,0.0,0.0));
 				imageStore(weight_tex, xyz, uvec4(w_now,0.0,0.0,0.0));
