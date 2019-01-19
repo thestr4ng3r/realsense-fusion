@@ -115,7 +115,7 @@ GLuint PC_Integrator::genComputeProg()
 
 				float tsdf_avg = (tsdf_last * w_last + tsdf * add_weight) / (w_last + add_weight);
 
-				uint w_now = min(max_weight, w_last + 1);
+				uint w_now = min(max_weight, w_last + add_weight);
 
 				imageStore(tsdf_tex, xyz, vec4(tsdf_avg,0.0,0.0,0.0));
 				imageStore(weight_tex, xyz, uvec4(w_now,0.0,0.0,0.0));
