@@ -1,4 +1,6 @@
 
+#include <icp.h>
+
 #include "icp.h"
 #include "frame.h"
 #include "camera_transform.h"
@@ -6,6 +8,8 @@
 #include "renderer.h"
 
 #define RESIDUAL_COMPONENTS 7
+#define MATRIX_COLUMNS RESIDUAL_COMPONENTS
+#define MATRIX_ROWS (RESIDUAL_COMPONENTS-1)
 #define ICP_DISTANCE_THRESHOLD 0.3f
 #define ICP_ANGLE_COS_TRESHOLD 0.0f
 
@@ -98,7 +102,7 @@ void main()
 	}
 
 
-	vec3 dir_world = vertex_current_world - vertex_prev_world;
+	vec3 dir_world = vertex_prev_world - vertex_current_world;
 	float dist_sq = dot(dir_world, dir_world);
 	if(dist_sq > distance_sq_threshold)
 	{
@@ -120,10 +124,55 @@ void main()
 	imageStore(debug_out, coord, vec4(dir_world, 43.0));
 #endif
 
-	StoreResidual(
-		cross(vertex_current_world, normal_prev_world),
-		vec3(vertex_current_image_prev, 42.0),
-		dot(normal_prev_world, dir_world));
+	// see K. Low. Linear least-squares optimization for point-to-plane ICP surface registration.
+
+	vec3 n = normal_prev_world;
+	vec3 d = vertex_prev_world;
+	vec3 s = vertex_current_world;
+
+	StoreResidual(cross(s, n), n, dot(n, dir_world));
+}
+)glsl";
+
+
+static const char *reduce_shader_code =
+"#version 450 core\n"
+"#define COLUMNS " TOSTR(MATRIX_COLUMNS) "\n"
+"#define ROWS " TOSTR(MATRIX_ROWS) "\n"
+"#line " TOSTR(__LINE__) "\n" R"glsl(
+
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+uniform uint residuals_count;
+
+layout(std430, binding = 0) buffer residuals_in
+{
+	float residuals[];
+};
+
+layout(std430, binding = 1) buffer matrix_out
+{
+	float matrix[COLUMNS*ROWS];
+};
+
+float GetResidualValue(uvec2 coord)
+{
+	return residuals[COLUMNS * coord.y + coord.x];
+}
+
+void main()
+{
+	uvec2 coord = gl_GlobalInvocationID.xy;
+	float res = 0.0;
+	for(uint i=0; i<residuals_count; i++)
+	{
+		float a = GetResidualValue(uvec2(coord.y, i));
+		float b = GetResidualValue(uvec2(coord.x, i));
+		if(isnan(a) || isnan(b))
+			continue;
+		res += a * b;
+	}
+	matrix[coord.x * ROWS + coord.y] = res;
 }
 )glsl";
 
@@ -144,6 +193,15 @@ ICP::ICP()
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, residuals_buffer);
 	glObjectLabel(GL_BUFFER, residuals_buffer, -1, "ICP::residuals_buffer");
 	residuals_buffer_size = 0;
+
+	reduce_program = CreateComputeShader(reduce_shader_code);
+	reduce_residuals_count_uniform = glGetUniformLocation(reduce_program, "residuals_count");
+	glObjectLabel(GL_PROGRAM, reduce_program, -1, "ICP::reduce_program");
+
+	glGenBuffers(1, &matrix_buffer);
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, matrix_buffer);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float) * MATRIX_COLUMNS * MATRIX_ROWS, nullptr, GL_DYNAMIC_READ);
+
 
 #ifdef ICP_DEBUG_TEX
 	glGenTextures(1, &debug_tex);
@@ -218,4 +276,36 @@ void ICP::SearchCorrespondences(Frame *frame, Renderer *renderer, const CameraTr
 
 	glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
 	glDispatchCompute(static_cast<GLuint>(frame->GetDepthWidth()), static_cast<GLuint>(frame->GetDepthHeight()), 1);
+}
+
+#include <iostream>
+#include <Eigen/Dense>
+
+void ICP::SolveMatrix(int residuals_count, CameraTransform *cam_transform_new)
+{
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, residuals_buffer);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, matrix_buffer);
+
+	glUseProgram(reduce_program);
+	glUniform1ui(reduce_residuals_count_uniform, static_cast<GLuint>(residuals_count));
+
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	glDispatchCompute(MATRIX_COLUMNS, MATRIX_ROWS, 1);
+
+	glMemoryBarrier(GL_BUFFER_UPDATE_BARRIER_BIT);
+	Eigen::Matrix<float, MATRIX_ROWS, MATRIX_COLUMNS> matrix;
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, matrix_buffer);
+	glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(float) * MATRIX_COLUMNS * MATRIX_ROWS, matrix.data());
+
+	std::cout << "Resulting Matrix:\n" << matrix << std::endl;
+
+	Eigen::Matrix<float, MATRIX_ROWS, MATRIX_ROWS> A = matrix.block<MATRIX_ROWS, MATRIX_ROWS>(0, 0);
+	Eigen::Matrix<float, MATRIX_ROWS, 1> b = matrix.col(6);
+
+	std::cout << "A:\n" << A << std::endl;
+	std::cout << "b:\n" << b << std::endl;
+
+	Eigen::Matrix<float, MATRIX_ROWS, 1> result = A.colPivHouseholderQr().solve(b);
+
+	std::cout << "result:\n" << result << std::endl;
 }

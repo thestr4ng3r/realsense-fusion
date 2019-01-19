@@ -68,6 +68,7 @@ int main(int argc, char *argv[])
 
 		CameraTransform camera_transform_old = camera_transform;
 		icp.SearchCorrespondences(&frame, &renderer, camera_transform_old, &camera_transform);
+		//icp.SolveMatrix(frame.GetDepthWidth() * frame.GetDepthHeight(), &camera_transform);
 
 		integrator.integrate(&frame, &camera_transform);
 

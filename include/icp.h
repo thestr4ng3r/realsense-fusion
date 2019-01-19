@@ -24,6 +24,11 @@ class ICP
 		GLuint residuals_buffer;
 		size_t residuals_buffer_size;
 
+		GLuint reduce_program;
+		GLint reduce_residuals_count_uniform;
+
+		GLuint matrix_buffer;
+
 #ifdef ICP_DEBUG_TEX
 		GLuint debug_tex;
 		int debug_tex_width;
@@ -35,6 +40,7 @@ class ICP
 		virtual ~ICP();
 
 		void SearchCorrespondences(Frame *frame, Renderer *renderer, const CameraTransform &cam_transform_old, CameraTransform *cam_transform_new);
+		void SolveMatrix(int residuals_count, CameraTransform *cam_transform_new);
 };
 
 #endif //_ICP_H
