@@ -38,6 +38,7 @@ class Frame
 		~Frame();
 
 		void SetDepthMap(int width, int height, GLushort *data, float depth_scale, const Eigen::Vector2f &focal_length, const Eigen::Vector2f &center);
+		void SetColorMap(int width, int height, GLushort *data, const Eigen::Vector2f &focal_length, const Eigen::Vector2f &center);
 		GLuint GetDepthTex()	{ return depth_tex; }
 		int GetDepthWidth()		{ return depth_width; }
 		int GetDepthHeight()	{ return depth_height; }
