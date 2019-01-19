@@ -8,7 +8,7 @@ class Frame;
 class CameraTransform;
 class Renderer;
 
-#define ICP_DEBUG_TEX
+//#define ICP_DEBUG_TEX
 
 class ICP
 {
@@ -29,6 +29,9 @@ class ICP
 
 		GLuint matrix_buffer;
 
+		float distance_threshold;
+		float angle_threshold;
+
 #ifdef ICP_DEBUG_TEX
 		GLuint debug_tex;
 		int debug_tex_width;
@@ -41,6 +44,12 @@ class ICP
 
 		void SearchCorrespondences(Frame *frame, Renderer *renderer, const CameraTransform &cam_transform_old, CameraTransform *cam_transform_new);
 		void SolveMatrix(CameraTransform *cam_transform_new);
+
+		float GetDistanceThreshold()		{ return distance_threshold; }
+		float GetAngleThreshold()			{ return angle_threshold; }
+
+		void SetDistanceThreshold(float v)	{ distance_threshold = v; }
+		void SetAngleThreshold(float v)		{ angle_threshold = v; }
 };
 
 #endif //_ICP_H

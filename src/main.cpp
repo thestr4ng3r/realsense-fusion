@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
 
 	PC_Integrator integrator(&gl_model);
 
-	bool enable_tracking = true;
+	bool enable_tracking = false;
 
 	while(!window.GetShouldTerminate())
 	{
@@ -80,14 +80,22 @@ int main(int argc, char *argv[])
 		integrator.integrate(&frame, &camera_transform);
 
 		window.BeginGUI();
-		ImGui::Begin("Info");
+		ImGui::Begin("Settings");
 		ImGui::Text("Resolution: %dx%d", frame.GetDepthWidth(), frame.GetDepthHeight());
 		if(ImGui::Button("Reset Model and Transform"))
 		{
 			gl_model.Reset();
 			camera_transform.SetTransform(reset_transform);
 		}
-		ImGui::Checkbox("Enable Tracking", &enable_tracking);
+		ImGui::BeginChild("ICP", ImVec2(0, 0), true);
+			ImGui::Checkbox("Enable Tracking", &enable_tracking);
+			float v = icp.GetDistanceThreshold();
+			ImGui::SliderFloat("Distance Threshold", &v, 0.0f, 1.0f, "%.3f");
+			icp.SetDistanceThreshold(v);
+			v = icp.GetAngleThreshold();
+			ImGui::SliderFloat("Angle Threshold", &v, -1.0f, 1.0f, "%.3f");
+			icp.SetAngleThreshold(v);
+		ImGui::EndChild();
 		ImGui::End();
 		window.EndGUI();
 

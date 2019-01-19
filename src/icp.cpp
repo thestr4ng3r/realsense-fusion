@@ -10,8 +10,6 @@
 #define RESIDUAL_COMPONENTS 7
 #define MATRIX_COLUMNS RESIDUAL_COMPONENTS
 #define MATRIX_ROWS (RESIDUAL_COMPONENTS-1)
-#define ICP_DISTANCE_THRESHOLD 0.1f
-#define ICP_ANGLE_COS_TRESHOLD 0.5f
 
 #define STRHELPER(x) #x
 #define TOSTR(x) STRHELPER(x)
@@ -294,6 +292,8 @@ ICP::ICP()
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, matrix_buffer);
 	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float) * MATRIX_COLUMNS * MATRIX_ROWS, nullptr, GL_DYNAMIC_READ);
 
+	distance_threshold = 0.1f;
+	angle_threshold = 0.0f;
 
 #ifdef ICP_DEBUG_TEX
 	glGenTextures(1, &debug_tex);
@@ -358,8 +358,8 @@ void ICP::SearchCorrespondences(Frame *frame, Renderer *renderer, const CameraTr
 	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D, frame->GetNormalTex());
 
-	glUniform1f(corr_distance_sq_threshold_uniform, ICP_DISTANCE_THRESHOLD * ICP_DISTANCE_THRESHOLD); // TODO: make user-adjustable
-	glUniform1f(corr_angle_cos_threshold_uniform, ICP_ANGLE_COS_TRESHOLD); // TODO: make user-adjustable
+	glUniform1f(corr_distance_sq_threshold_uniform, distance_threshold * distance_threshold);
+	glUniform1f(corr_angle_cos_threshold_uniform, angle_threshold);
 
 	glUniformMatrix4fv(corr_modelview_prev_uniform, 1, GL_FALSE, renderer->GetModelviewMatrix().data());
 	glUniformMatrix4fv(corr_projection_prev_uniform, 1, GL_FALSE, renderer->GetProjectionMatrix().data());
@@ -414,9 +414,9 @@ void ICP::SolveMatrix(CameraTransform *cam_transform_new)
 	auto translation_delta = result.tail<3>();*/
 
 	Eigen::Affine3f transform = cam_transform_new->GetTransform();
-	//transform.rotate(Eigen::AngleAxisf(result(0), Eigen::Vector3f::UnitX()));
-	//transform.rotate(Eigen::AngleAxisf(result(1), Eigen::Vector3f::UnitY()));
-	//transform.rotate(Eigen::AngleAxisf(result(2), Eigen::Vector3f::UnitZ()));
+	transform.rotate(Eigen::AngleAxisf(result(0), Eigen::Vector3f::UnitX()));
+	transform.rotate(Eigen::AngleAxisf(result(1), Eigen::Vector3f::UnitY()));
+	transform.rotate(Eigen::AngleAxisf(result(2), Eigen::Vector3f::UnitZ()));
 	transform.translate(result.tail<3>());
 	cam_transform_new->SetTransform(transform);
 }
