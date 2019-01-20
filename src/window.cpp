@@ -51,6 +51,7 @@ Window::Window(const char *title, int width, int height)
 
 	glEnable(GL_DEBUG_OUTPUT);
 	glDebugMessageControl(GL_DONT_CARE, GL_DEBUG_TYPE_OTHER, GL_DONT_CARE, 0, nullptr, GL_FALSE);
+	glDebugMessageControl(GL_DONT_CARE, GL_DEBUG_TYPE_PERFORMANCE, GL_DONT_CARE, 0, nullptr, GL_FALSE);
 	glDebugMessageCallback(GLMessageCallback, nullptr);
 
 	IMGUI_CHECKVERSION();

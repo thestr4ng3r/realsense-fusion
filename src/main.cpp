@@ -55,7 +55,8 @@ int main(int argc, char *argv[])
 
 	PC_Integrator integrator(&gl_model);
 
-	bool enable_tracking = false;
+	bool enable_tracking = true;
+	int icp_passes = 5;
 
 	while(!window.GetShouldTerminate())
 	{
@@ -69,7 +70,7 @@ int main(int argc, char *argv[])
 		frame.ProcessFrame();
 
 		CameraTransform camera_transform_old = camera_transform;
-		for(int i=0; i<5; i++)
+		for(int i=0; i<icp_passes; i++)
 		{
 			icp.SearchCorrespondences(&frame, &renderer, camera_transform_old, &camera_transform);
 			icp.SolveMatrix(&camera_transform);
@@ -89,6 +90,7 @@ int main(int argc, char *argv[])
 		}
 		ImGui::BeginChild("ICP", ImVec2(0, 0), true);
 			ImGui::Checkbox("Enable Tracking", &enable_tracking);
+			ImGui::SliderInt("Iterations", &icp_passes, 1, 10);
 			float v = icp.GetDistanceThreshold();
 			ImGui::SliderFloat("Distance Threshold", &v, 0.0f, 1.0f, "%.3f");
 			icp.SetDistanceThreshold(v);

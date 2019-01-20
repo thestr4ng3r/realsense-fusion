@@ -78,12 +78,12 @@ float[RESIDUAL_COMPONENTS] CreateResidual(ivec2 coord)
 	// see also https://github.com/chrdiller/KinectFusionLib/blob/master/src/cuda/pose_estimation.cu
 	// but we're not building a pyramid of doom
 
+#ifdef ICP_DEBUG_TEX
+	imageStore(debug_out, coord, vec4(-1.0));
+#endif
+
 	if(coord.x >= image_res.x || coord.y >= image_res.y)
 		return NopResidual();
-
-#ifdef ICP_DEBUG_TEX
-	imageStore(debug_out, coord, vec4(vec2(gl_LocalInvocationID.xy), 0.0, 43.0));
-#endif
 
 	vec3 vertex_current_camera = texelFetch(vertex_tex_current, coord, 0).xyz;
 	if(isinf(vertex_current_camera.x))
@@ -122,6 +122,10 @@ float[RESIDUAL_COMPONENTS] CreateResidual(ivec2 coord)
 	vec3 d = vertex_prev_world;
 	vec3 s = vertex_current_world;
 
+#ifdef ICP_DEBUG_TEX
+	imageStore(debug_out, coord, vec4(dir_world, 43.0));
+#endif
+
 	return Residual(cross(s, n), n, dot(n, dir_world));
 }
 
@@ -150,73 +154,80 @@ void main()
 			reduce_buf_shared[local_id_flat] = v;
 
 			memoryBarrierShared();
+			barrier();
 
 			// Tree-based summing
-/*
+
 #if LOCAL_SIZE_TOTAL >= 1024
 			if(local_id_flat < 512)
 				reduce_buf_shared[local_id_flat] = v = v + reduce_buf_shared[local_id_flat + 512];
 			memoryBarrierShared();
+			barrier();
 #endif
 
 #if LOCAL_SIZE_TOTAL >= 512
 			if(local_id_flat < 256)
 				reduce_buf_shared[local_id_flat] = v = v + reduce_buf_shared[local_id_flat + 256];
 			memoryBarrierShared();
+			barrier();
 #endif
 
 #if LOCAL_SIZE_TOTAL >= 256
 			if(local_id_flat < 128)
 				reduce_buf_shared[local_id_flat] = v = v + reduce_buf_shared[local_id_flat + 128];
 			memoryBarrierShared();
+			barrier();
 #endif
 
 #if LOCAL_SIZE_TOTAL >= 128
 			if(local_id_flat < 64)
 				reduce_buf_shared[local_id_flat] = v = v + reduce_buf_shared[local_id_flat + 64];
 			memoryBarrierShared();
+			barrier();
 #endif
 
 #if LOCAL_SIZE_TOTAL >= 64
 			if(local_id_flat < 32)
 				reduce_buf_shared[local_id_flat] = v = v + reduce_buf_shared[local_id_flat + 32];
 			memoryBarrierShared();
+			barrier();
 #endif
 
 #if LOCAL_SIZE_TOTAL >= 32
 			if(local_id_flat < 16)
 				reduce_buf_shared[local_id_flat] = v = v + reduce_buf_shared[local_id_flat + 16];
 			memoryBarrierShared();
+			barrier();
 #endif
 
 #if LOCAL_SIZE_TOTAL >= 16
 			if(local_id_flat < 8)
 				reduce_buf_shared[local_id_flat] = v = v + reduce_buf_shared[local_id_flat + 8];
 			memoryBarrierShared();
+			barrier();
 #endif
 
 #if LOCAL_SIZE_TOTAL >= 8
 			if(local_id_flat < 4)
 				reduce_buf_shared[local_id_flat] = v = v + reduce_buf_shared[local_id_flat + 4];
 			memoryBarrierShared();
+			barrier();
 #endif
 
 #if LOCAL_SIZE_TOTAL >= 4
 			if(local_id_flat < 2)
 				reduce_buf_shared[local_id_flat] = v = v + reduce_buf_shared[local_id_flat + 2];
 			memoryBarrierShared();
+			barrier();
 #endif
 
 #if LOCAL_SIZE_TOTAL >= 2
 			if(local_id_flat < 1)
 				v += reduce_buf_shared[local_id_flat + 1];
-#endif*/
+#endif
 
 			if(local_id_flat == 0)
 			{
-				v = 0.0;
-				for(uint i=0; i<LOCAL_SIZE_TOTAL; i++)
-					v += reduce_buf_shared[i];
 				uint base = ROWS * COLUMNS * uint(gl_WorkGroupID.y * gl_NumWorkGroups.x + gl_WorkGroupID.x);
 				residuals[base + row * COLUMNS + col] = v;
 			}
@@ -392,8 +403,6 @@ void ICP::SolveMatrix(CameraTransform *cam_transform_new)
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, matrix_buffer);
 	glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(float) * MATRIX_COLUMNS * MATRIX_ROWS, matrix.data());
 
-	std::cout << "Resulting Matrix:\n" << matrix << std::endl;
-
 	Eigen::Matrix<float, MATRIX_ROWS, MATRIX_ROWS> A = matrix.block<MATRIX_ROWS, MATRIX_ROWS>(0, 0);
 	Eigen::Matrix<float, MATRIX_ROWS, 1> b = matrix.col(6);
 
@@ -401,17 +410,7 @@ void ICP::SolveMatrix(CameraTransform *cam_transform_new)
 	if(A.determinant() < 100000 /*1e-15*/ || std::isnan(A.determinant()))
 		return;
 
-	std::cout << "A:\n" << A << std::endl;
-	std::cout << "b:\n" << b << std::endl;
-
 	Eigen::Matrix<float, MATRIX_ROWS, 1> result = A.colPivHouseholderQr().solve(b);
-
-	std::cout << "result:\n" << result << std::endl;
-
-	/*auto rotation_delta = Eigen::AngleAxisf(result(2), Eigen::Vector3f::UnitZ())
-		* Eigen::AngleAxisf(result(1), Eigen::Vector3f::UnitY())
-		* Eigen::AngleAxisf(result(0), Eigen::Vector3f::UnitX());
-	auto translation_delta = result.tail<3>();*/
 
 	Eigen::Affine3f transform = cam_transform_new->GetTransform();
 	transform.rotate(Eigen::AngleAxisf(result(0), Eigen::Vector3f::UnitX()));
