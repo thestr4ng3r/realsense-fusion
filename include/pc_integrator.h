@@ -28,6 +28,7 @@ class PC_Integrator
 		GLint max_truncation_uniform;
 		GLint min_truncation_uniform;
 		GLint max_weight_uniform;
+		GLint activateColors_uniform;
 
 		int resolutionX;
 		int resolutionY;

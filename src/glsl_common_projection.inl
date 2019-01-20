@@ -26,7 +26,7 @@ vec2 ProjectCameraToImage(vec3 pos)
 
 // same as ProjectCameraToImage just on Color Image
 // returns a pixel coordinate in [0, camera_intrinsics.res]
-vec2 ProjectCameraColorToImage(vec3 pos)
+vec2 ProjectColorCameraToImage(vec3 pos)
 {
 	vec2 v = (pos.xy * vec2(1.0, -1.0)) / -pos.z;
 	// TODO: distortion here

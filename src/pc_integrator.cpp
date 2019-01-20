@@ -51,7 +51,9 @@ GLuint PC_Integrator::genComputeProg()
 
 		layout(r32f, binding = 0) uniform image3D  tsdf_tex;
 		layout(r16ui, binding = 1) uniform uimage3D  weight_tex;
+		layout(r32f, binding = 2) uniform image3D color_tex;
 		layout(binding = 0) uniform usampler2D depth_map;
+		layout(binding = 1) uniform usampler2D color_map;
 
 		uniform mat4 cam_modelview;
 		uniform vec3 cam_pos;
@@ -63,6 +65,8 @@ GLuint PC_Integrator::genComputeProg()
 		uniform float max_truncation;
 		uniform float min_truncation;
 		uniform uint max_weight;
+
+		uniform int activateColors;
 
 		layout (local_size_x = 1, local_size_y = 1, local_size_z=1) in;
 		void main() {
@@ -76,17 +80,12 @@ GLuint PC_Integrator::genComputeProg()
 
 				vec4 v = cam_modelview * v_g;
 
-				ivec2 p = ivec2(ProjectCameraToImage(v.xyz));
+				ivec2 p = ivec2(ProjectCameraToImage(v.xyz));				
 
 				ivec2 depth_res = textureSize(depth_map, 0);
 				if( p.x < 0 || p.x > depth_res.x || p.y < 0 || p.y > depth_res.y  )
 				{
 					continue;
-				}
-
-				if( abs(v.x) > 1 || abs(v.y) > 1 )
-				{
-					//continue;
 				}
 
 				float depth = ReadDepth(depth_map, p, depth_scale);
@@ -111,10 +110,28 @@ GLuint PC_Integrator::genComputeProg()
 
 				float tsdf_avg = (tsdf_last * w_last + tsdf * add_weight) / (w_last + add_weight);
 
+				//COLOR
+				vec4 color_avg = vec4(0.f, 0.f, 0.f, 1.f);
+				if(activateColors != 0)
+				{
+					
+					ivec2 pc = ivec2(ProjectColorCameraToImage(v.xyz));
+					ivec2 color_res = textureSize(color_map, 0);
+					if( pc.x < 0 || pc.x > depth_res.x || pc.y < 0 || pc.y > depth_res.y  )
+					{
+						continue;
+					}
+					vec4 color = texelFetch(color_map, pc,0);
+
+					vec4 color_avg = (color * w_last + color * add_weight) / (w_last + add_weight);
+					
+				}
+
 				uint w_now = min(max_weight, w_last + add_weight);
 
 				imageStore(tsdf_tex, xyz, vec4(tsdf_avg,0.0,0.0,0.0));
 				imageStore(weight_tex, xyz, uvec4(w_now,0.0,0.0,0.0));
+				imageStore(color_tex, xyz, color_avg);
 			}
 		}		
 	    )glsl";
@@ -155,6 +172,7 @@ GLuint PC_Integrator::genComputeProg()
 	max_truncation_uniform = glGetUniformLocation(progHandle, "max_truncation");
 	min_truncation_uniform = glGetUniformLocation(progHandle, "min_truncation");
 	max_weight_uniform = glGetUniformLocation(progHandle, "max_weight");
+	activateColors_uniform = glGetUniformLocation(progHandle, "activateColors");
 
 	glUniform1i(tsdf_tex_uniform, 0); //Image Unit 0
 	glUniform1i(weight_tex_uniform, 1);
@@ -166,7 +184,11 @@ void PC_Integrator::integrate(Frame *frame, CameraTransform *camera_transform)
 {
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, frame->GetDepthTex());
+	
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, frame->GetColorTex());
 
+	
 
 	Eigen::Vector3f cam_pos = camera_transform->GetTransform().translation();
 	Eigen::Vector3f cam_dir = camera_transform->GetTransform().rotation() * Eigen::Vector3f(0.0f, 0.0f, -1.0f);
@@ -183,8 +205,10 @@ void PC_Integrator::integrate(Frame *frame, CameraTransform *camera_transform)
 	glUniform1f(max_truncation_uniform, glModel->GetMaxTruncation());
 	glUniform1f(min_truncation_uniform, glModel->GetMinTruncation());
 	glUniform1ui(max_weight_uniform, MAX_WEIGHT);
+	glUniform1i(activateColors_uniform, this->glModel->GetColorsActive());
 	glBindImageTexture(0, glModel->GetTSDFTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
 	glBindImageTexture(1, glModel->GetWeightTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R16UI);
+	glBindImageTexture(2, glModel->GetColorTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, this->glModel->GetParamsBuffer());
 	glBindBufferBase(GL_UNIFORM_BUFFER, 1, frame->GetCameraIntrinsicsBuffer());
 	glBindBufferBase(GL_UNIFORM_BUFFER, 2, frame->GetCameraIntrinsicsColorBuffer());

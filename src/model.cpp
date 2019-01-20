@@ -126,7 +126,7 @@ void CPUModel::Init()
 
 	if (colorsActive)
 	{
-		color = new uint8_t[resolutionX*resolutionY*resolutionZ * 4];
+		color = new float[resolutionX*resolutionY*resolutionZ * 4];
 	}
 	Reset();
 }

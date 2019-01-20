@@ -52,7 +52,7 @@ class CPUModel: public Model
 	private:
 		float *tsdf; //truncated signed distance function
 		uint16_t *weigths;
-		uint8_t *color;
+		float *color;
 
 		int IDX(int x, int y, int z) //3d index -> 1d index
 		{
@@ -70,7 +70,7 @@ class CPUModel: public Model
 
 		float *GetData()					{ return tsdf; }
 		uint16_t *GetWeights()				{ return weigths; }
-		uint8_t *GetColor()					{ return color; }
+		float *GetColor()					{ return color; }
 		void GenerateSphere(float radius, Eigen::Vector3f center);
 
 		void DebugToLog();
