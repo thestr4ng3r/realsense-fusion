@@ -24,7 +24,7 @@ void Model::Init(int resolutionX, int resolutionY, int resolutionZ, float cellSi
 
 // Constructor with default origin placement in camera centered coordinate system
 // Origin is located at min (-resX/2, -resY/2 , -resZ/2)
-Model::Model(int resolutionX, int resolutionY, int resolutionZ, float cellSize, float max_truncation, float min_truncation)
+Model::Model(int resolutionX, int resolutionY, int resolutionZ, float cellSize, float max_truncation, float min_truncation, bool colorsActive)
 {
 	Init(resolutionX, resolutionY, resolutionZ, cellSize, max_truncation, min_truncation);
 
@@ -34,14 +34,15 @@ Model::Model(int resolutionX, int resolutionY, int resolutionZ, float cellSize, 
 
 	this->modelOrigin = Eigen::Vector3f(cornerX, cornerY, cornerZ);
 
+	this->colorsActive = colorsActive;
 }
 
-Model::Model(int resolutionX, int resolutionY, int resolutionZ, float cellSize, float max_truncation, float min_truncation, Eigen::Vector3f modelOrigin)
+Model::Model(int resolutionX, int resolutionY, int resolutionZ, float cellSize, float max_truncation, float min_truncation, Eigen::Vector3f modelOrigin, bool colorsActive)
 {
 	Init(resolutionX, resolutionY, resolutionZ, cellSize, max_truncation, min_truncation);
 
 	//assert model in grid
-
+	this->colorsActive = colorsActive;
 	this->modelOrigin = modelOrigin;
 }
 
@@ -78,14 +79,14 @@ Eigen::Vector3f Model::TexelToGrid(Eigen::Vector3i pos)
 
 
 
-CPUModel::CPUModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize, float max_truncation, float min_truncation)
-	: Model(resolutionX, resolutionY, resolutionZ, cellSize, max_truncation, min_truncation)
+CPUModel::CPUModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize, float max_truncation, float min_truncation, bool colorsActive)
+	: Model(resolutionX, resolutionY, resolutionZ, cellSize, max_truncation, min_truncation, colorsActive)
 {
 	Init();
 }
 
-CPUModel::CPUModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize, float max_truncation, float min_truncation, Eigen::Vector3f modelOrigin)
-	: Model(resolutionX, resolutionY, resolutionZ, cellSize, max_truncation, min_truncation, modelOrigin)
+CPUModel::CPUModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize, float max_truncation, float min_truncation, Eigen::Vector3f modelOrigin, bool colorsActive)
+	: Model(resolutionX, resolutionY, resolutionZ, cellSize, max_truncation, min_truncation, modelOrigin, colorsActive)
 {
 	Init();
 }
@@ -94,6 +95,11 @@ CPUModel::~CPUModel()
 {
 	delete [] tsdf;
 	delete [] weigths;
+	if (colorsActive)
+	{
+		delete[] color;
+	}
+	
 }
 
 void CPUModel::Reset()
@@ -103,12 +109,25 @@ void CPUModel::Reset()
 		tsdf[x] = max_truncation;
 		weigths[x] = 0;
 	}
+	if (colorsActive)
+	{
+		for (int x = 0; x < resolutionX*resolutionY*resolutionZ * 4; x++)
+		{
+			color = 0;
+		}
+	}
+	
 }
 
 void CPUModel::Init()
 {
 	tsdf = new float[resolutionX*resolutionY*resolutionZ];
 	weigths = new uint16_t[resolutionX*resolutionY*resolutionZ];
+
+	if (colorsActive)
+	{
+		color = new uint8_t[resolutionX*resolutionY*resolutionZ * 4];
+	}
 	Reset();
 }
 

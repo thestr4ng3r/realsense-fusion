@@ -2,15 +2,17 @@
 #include "gl_model.h"
 
 
-GLModel::GLModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize, float max_truncation, float min_truncation)
-	: Model(resolutionX, resolutionY, resolutionZ, cellSize, max_truncation, min_truncation)
+GLModel::GLModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize, float max_truncation, float min_truncation, bool colorsActive)
+	: Model(resolutionX, resolutionY, resolutionZ, cellSize, max_truncation, min_truncation, colorsActive)
 {
+	this->colorsActive = colorsActive;
 	Init();
 }
 
-GLModel::GLModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize, float max_truncation, float min_truncation, Eigen::Vector3f modelOrigin)
-	: Model(resolutionX, resolutionY, resolutionZ, cellSize, max_truncation, min_truncation, modelOrigin)
+GLModel::GLModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize, float max_truncation, float min_truncation, Eigen::Vector3f modelOrigin, bool colorsActive)
+	: Model(resolutionX, resolutionY, resolutionZ, cellSize, max_truncation, min_truncation, modelOrigin, colorsActive)
 {
+	this->colorsActive = colorsActive;
 	Init();
 }
 
@@ -19,6 +21,9 @@ GLModel::~GLModel()
 	glDeleteTextures(1, &tsdf_tex);
 	glDeleteTextures(1, &weight_tex);
 	glDeleteBuffers(1, &params_buffer);
+	if (colorsActive) {
+		glDeleteTextures(1, &color_tex);
+	}
 }
 
 void GLModel::Init()
@@ -43,6 +48,18 @@ void GLModel::Init()
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 	glTexImage3D(GL_TEXTURE_3D, 0, GL_R16UI, resolutionX, resolutionY, resolutionZ, 0, GL_RED_INTEGER, GL_UNSIGNED_SHORT, nullptr);
 
+	if (colorsActive) {
+		glActiveTexture(GL_TEXTURE2);
+		glGenTextures(1, &color_tex);
+		glBindTexture(GL_TEXTURE_3D, color_tex);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, resolutionX, resolutionY, resolutionZ, 0, GL_RGBA, GL_UNSIGNED_SHORT, nullptr);
+	}
+
 	// see glsl_common_grid.inl
 	glGenBuffers(1, &params_buffer);
 	glBindBuffer(GL_UNIFORM_BUFFER, params_buffer);
@@ -66,6 +83,11 @@ void GLModel::Reset()
 	glClearTexImage(tsdf_tex, 0, GL_RGBA, GL_FLOAT, tsdf_reset);
 	uint16_t weight_reset[] = { 0, 0, 0, 0 };
 	glClearTexImage(weight_tex, 0, GL_RGBA_INTEGER, GL_UNSIGNED_SHORT, weight_reset);
+	if (colorsActive)
+	{
+		uint8_t color_reset[] = { 0, 0, 0, 0 };
+		glClearTexImage(weight_tex, 0, GL_RGBA_INTEGER, GL_UNSIGNED_SHORT, weight_reset);
+	}
 }
 
 void GLModel::CopyFrom(CPUModel *cpu_model)
@@ -81,4 +103,11 @@ void GLModel::CopyFrom(CPUModel *cpu_model)
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_3D, weight_tex);
 	glTexImage3D(GL_TEXTURE_3D, 0, GL_R16UI, resolutionX, resolutionY, resolutionZ, 0, GL_RED_INTEGER, GL_UNSIGNED_SHORT, cpu_model->GetWeights());
+
+	if (colorsActive)
+	{
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_3D, color_tex);
+		glTexImage3D(GL_TEXTURE_3D, 0, GL_R8UI, resolutionX, resolutionY, resolutionZ, 0, GL_RGBA_INTEGER, GL_UNSIGNED_SHORT, cpu_model->GetColor());
+	}
 }

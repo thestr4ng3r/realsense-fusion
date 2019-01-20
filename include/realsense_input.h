@@ -39,6 +39,8 @@ class RealSenseInput : public Input
 
 		void setFilterActive(bool set) { filters_active = set; }
 		void setColorActive(bool set) { color_active = set; }
+		bool GetFilterActive() { return filters_active; }
+		bool GetColorActive() { return color_active; }
 };
 
 #endif //INPUT_H

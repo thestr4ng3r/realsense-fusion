@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
 	glmodel.CopyFrom(&cpu_model);
 	*/
 
-	CPUModel cpu_model (256, 256, 256, 1.0f / 256.0f, 0.3f, -0.3f);
+	CPUModel cpu_model (256, 256, 256, 1.0f / 256.0f, 0.3f, -0.3f, false);
 	//cpu_model.GenerateSphere(0.3f, Eigen::Vector3f(0.0f, 0.0f, 0.0f));
 
 	GLModel glmodel(
@@ -50,7 +50,8 @@ int main(int argc, char *argv[])
 		cpu_model.GetCellSize(),
 		cpu_model.GetMaxTruncation(),
 		cpu_model.GetMinTruncation(),
-		cpu_model.GetModelOrigin());
+		cpu_model.GetModelOrigin(),
+		false);
 
 	glmodel.CopyFrom(&cpu_model);
 

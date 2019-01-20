@@ -98,6 +98,7 @@ GLuint PC_Integrator::genComputeProg()
 				// this is how they do it in the paper, but it's just plain wrong:
 				// (at least with the common definition of "depth")
 				// float sdf = depth - distance(vec4(cam_pos,1) , v_g);
+
 				float sdf = depth - dot(cam_dir, v_g.xyz - cam_pos);
 
 				float tsdf = clamp(sdf, min_truncation, max_truncation);
@@ -186,6 +187,7 @@ void PC_Integrator::integrate(Frame *frame, CameraTransform *camera_transform)
 	glBindImageTexture(1, glModel->GetWeightTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R16UI);
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, this->glModel->GetParamsBuffer());
 	glBindBufferBase(GL_UNIFORM_BUFFER, 1, frame->GetCameraIntrinsicsBuffer());
+	glBindBufferBase(GL_UNIFORM_BUFFER, 2, frame->GetCameraIntrinsicsColorBuffer());
 
 	glDispatchCompute(resolutionX, resolutionY, 1);
 

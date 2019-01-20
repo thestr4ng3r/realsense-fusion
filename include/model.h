@@ -9,8 +9,8 @@ class Model
 {
 	public:
 		Model();
-		Model(int resolutionX, int resolutionY, int resolutionZ, float cellSize, float max_truncation, float min_truncation);
-		Model(int resolutionX, int resolutionY, int resolutionZ, float cellSize, float max_truncation, float min_truncation, Eigen::Vector3f modelOrigin);
+		Model(int resolutionX, int resolutionY, int resolutionZ, float cellSize, float max_truncation, float min_truncation, bool colorsActive);
+		Model(int resolutionX, int resolutionY, int resolutionZ, float cellSize, float max_truncation, float min_truncation, Eigen::Vector3f modelOrigin, bool colorsActive);
 		virtual ~Model();
 
 		virtual void Reset() =0;
@@ -22,6 +22,7 @@ class Model
 		Eigen::Vector3f GetModelOrigin()	{ return modelOrigin; }
 		float GetMaxTruncation()			{ return max_truncation; }
 		float GetMinTruncation()			{ return min_truncation; }
+		bool GetColorsActive()				{ return colorsActive; }
 
 		Eigen::Vector3f GridToWorld(Eigen::Vector3f pos);
 		Eigen::Vector3f WorldToGrid(Eigen::Vector3f pos);
@@ -42,6 +43,8 @@ class Model
 		float min_truncation;
 
 		Eigen::Vector3f modelOrigin;
+
+		bool colorsActive;
 };
 
 class CPUModel: public Model
@@ -49,6 +52,7 @@ class CPUModel: public Model
 	private:
 		float *tsdf; //truncated signed distance function
 		uint16_t *weigths;
+		uint8_t *color;
 
 		int IDX(int x, int y, int z) //3d index -> 1d index
 		{
@@ -58,14 +62,15 @@ class CPUModel: public Model
 		void Init();
 
 	public:
-		CPUModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize, float max_truncation, float min_truncation);
-		CPUModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize, float max_truncation, float min_truncation, Eigen::Vector3f modelOrigin);
+		CPUModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize, float max_truncation, float min_truncation, bool colorsActive);
+		CPUModel(int resolutionX, int resolutionY, int resolutionZ, float cellSize, float max_truncation, float min_truncation, Eigen::Vector3f modelOrigin, bool colorsActive);
 		~CPUModel() override;
 
 		void Reset() override;
 
 		float *GetData()					{ return tsdf; }
 		uint16_t *GetWeights()				{ return weigths; }
+		uint8_t *GetColor()					{ return color; }
 		void GenerateSphere(float radius, Eigen::Vector3f center);
 
 		void DebugToLog();
