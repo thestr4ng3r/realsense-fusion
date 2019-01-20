@@ -55,6 +55,7 @@ GLuint PC_Integrator::genComputeProg()
 
 		uniform mat4 cam_modelview;
 		uniform vec3 cam_pos;
+		uniform vec3 cam_dir;
 
 		uniform float cellSize;
 		uniform float depth_scale;
@@ -94,18 +95,12 @@ GLuint PC_Integrator::genComputeProg()
 					continue;
 				}
 
-				float sdf = depth - distance(vec4(cam_pos,1) , v_g);
+				// this is how they do it in the paper, but it's just plain wrong:
+				// (at least with the common definition of "depth")
+				// float sdf = depth - distance(vec4(cam_pos,1) , v_g);
+				float sdf = depth - dot(cam_dir, v_g.xyz - cam_pos);
 
 				float tsdf = clamp(sdf, min_truncation, max_truncation);
-
-				if (sdf > 0)
-				{
-					float ttsdf = min(sdf, max_truncation);
-				}
-				else
-				{
-					float ttsdf = max(sdf, min_truncation);
-				}
 				
 				const int add_weight = 1;
 
@@ -152,6 +147,7 @@ GLuint PC_Integrator::genComputeProg()
 
 	cam_modelview_uniform = glGetUniformLocation(progHandle, "cam_modelview");
 	cam_pos_uniform = glGetUniformLocation(progHandle, "cam_pos");
+	cam_dir_uniform = glGetUniformLocation(progHandle, "cam_dir");
 	tsdf_tex_uniform = glGetUniformLocation(progHandle, "tsdf_tex");
 	weight_tex_uniform = glGetUniformLocation(progHandle, "weight_tex");
 	depth_scale_uniform = glGetUniformLocation(progHandle, "depth_scale");
@@ -172,12 +168,15 @@ void PC_Integrator::integrate(Frame *frame, CameraTransform *camera_transform)
 
 
 	Eigen::Vector3f cam_pos = camera_transform->GetTransform().translation();
+	Eigen::Vector3f cam_dir = camera_transform->GetTransform().rotation() * Eigen::Vector3f(0.0f, 0.0f, -1.0f);
+	cam_dir.normalize();
 	Eigen::Matrix4f modelview = camera_transform->GetModelView();
 
 	glUseProgram(this->computeHandle);
 
 	// UNIFORMS
 	glUniform3fv(cam_pos_uniform, 1, cam_pos.data());
+	glUniform3fv(cam_dir_uniform, 1, cam_dir.data());
 	glUniformMatrix4fv(cam_modelview_uniform, 1, GL_FALSE, modelview.data());
 	glUniform1f(depth_scale_uniform, frame->GetDepthScale());
 	glUniform1f(max_truncation_uniform, glModel->GetMaxTruncation());

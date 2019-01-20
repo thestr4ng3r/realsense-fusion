@@ -21,6 +21,7 @@ class PC_Integrator
 		GLint depth_map_uniform;
 		GLint cam_modelview_uniform;
 		GLint cam_pos_uniform;
+		GLint cam_dir_uniform;
 		GLint weight_tex_uniform;
 		GLint tsdf_tex_uniform;
 		GLint depth_scale_uniform;
