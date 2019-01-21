@@ -42,8 +42,8 @@ class ICP
 		ICP();
 		virtual ~ICP();
 
-		void SearchCorrespondences(Frame *frame, Renderer *renderer, const CameraTransform &cam_transform_old, CameraTransform *cam_transform_new);
-		void SolveMatrix(CameraTransform *cam_transform_new);
+		void SearchCorrespondences(Frame *frame, Renderer *renderer, const CameraTransform &cam_transform_current);
+		void SolveMatrix(CameraTransform *cam_transform);
 
 		float GetDistanceThreshold()		{ return distance_threshold; }
 		float GetAngleThreshold()			{ return angle_threshold; }

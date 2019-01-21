@@ -326,7 +326,7 @@ ICP::~ICP()
 #endif
 }
 
-void ICP::SearchCorrespondences(Frame *frame, Renderer *renderer, const CameraTransform &cam_transform_old, CameraTransform *cam_transform_new)
+void ICP::SearchCorrespondences(Frame *frame, Renderer *renderer, const CameraTransform &cam_transform_current)
 {
 	unsigned int width_global = (static_cast<unsigned int>(frame->GetDepthWidth()) + CORR_LOCAL_SIZE - 1) / CORR_LOCAL_SIZE;
 	unsigned int height_global = (static_cast<unsigned int>(frame->GetDepthHeight()) + CORR_LOCAL_SIZE - 1) / CORR_LOCAL_SIZE;
@@ -354,8 +354,6 @@ void ICP::SearchCorrespondences(Frame *frame, Renderer *renderer, const CameraTr
 	glBindImageTexture(0, debug_tex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 #endif
 
-	cam_transform_new->SetTransform(cam_transform_old.GetTransform());
-
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, residuals_buffer);
 
 	glUseProgram(corr_program);
@@ -375,7 +373,7 @@ void ICP::SearchCorrespondences(Frame *frame, Renderer *renderer, const CameraTr
 	glUniformMatrix4fv(corr_modelview_prev_uniform, 1, GL_FALSE, renderer->GetModelviewMatrix().data());
 	glUniformMatrix4fv(corr_projection_prev_uniform, 1, GL_FALSE, renderer->GetProjectionMatrix().data());
 
-	glUniformMatrix4fv(corr_transform_current_uniform, 1, GL_FALSE, cam_transform_new->GetTransform().matrix().data());
+	glUniformMatrix4fv(corr_transform_current_uniform, 1, GL_FALSE, cam_transform_current.GetTransform().matrix().data());
 
 	glUniform2ui(corr_image_res_uniform, static_cast<GLuint>(frame->GetDepthWidth()), static_cast<GLuint>(frame->GetDepthHeight()));
 
@@ -387,7 +385,7 @@ void ICP::SearchCorrespondences(Frame *frame, Renderer *renderer, const CameraTr
 #include <iostream>
 #include <Eigen/Dense>
 
-void ICP::SolveMatrix(CameraTransform *cam_transform_new)
+void ICP::SolveMatrix(CameraTransform *cam_transform)
 {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, residuals_buffer);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, matrix_buffer);
@@ -412,10 +410,10 @@ void ICP::SolveMatrix(CameraTransform *cam_transform_new)
 
 	Eigen::Matrix<float, MATRIX_ROWS, 1> result = A.colPivHouseholderQr().solve(b);
 
-	Eigen::Affine3f transform = cam_transform_new->GetTransform();
+	Eigen::Affine3f transform = cam_transform->GetTransform();
 	transform.rotate(Eigen::AngleAxisf(result(0), Eigen::Vector3f::UnitX()));
 	transform.rotate(Eigen::AngleAxisf(result(1), Eigen::Vector3f::UnitY()));
 	transform.rotate(Eigen::AngleAxisf(result(2), Eigen::Vector3f::UnitZ()));
 	transform.translate(result.tail<3>());
-	cam_transform_new->SetTransform(transform);
+	cam_transform->SetTransform(transform);
 }

@@ -71,14 +71,14 @@ int main(int argc, char *argv[])
 		}
 		frame.ProcessFrame();
 
-		CameraTransform camera_transform_old = camera_transform;
-		for(int i=0; i<icp_passes; i++)
+		if (enable_tracking)
 		{
-			icp.SearchCorrespondences(&frame, &renderer, camera_transform_old, &camera_transform);
-			icp.SolveMatrix(&camera_transform);
+			for(int i=0; i<icp_passes; i++)
+			{
+				icp.SearchCorrespondences(&frame, &renderer, camera_transform);
+				icp.SolveMatrix(&camera_transform);
+			}
 		}
-		if(!enable_tracking)
-			camera_transform = camera_transform_old;
 
 		integrator.integrate(&frame, &camera_transform);
 
