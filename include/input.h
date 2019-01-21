@@ -21,6 +21,7 @@ class Input
 		virtual float GetFyColor() = 0;
 
 		virtual void setFilterActive(bool set) = 0;
+		virtual void setColorActive(bool set) = 0;
 };
 
 #endif //INPUT_H

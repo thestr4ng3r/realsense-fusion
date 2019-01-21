@@ -11,7 +11,7 @@ RealSenseInput::RealSenseInput(const rs2::config &config)
 	{
 		auto profile = pipe.start(config);
 		intrinsics = profile.get_stream(RS2_STREAM_DEPTH).as<rs2::video_stream_profile>().get_intrinsics();
-		//IntrinsicsColor = profile.get_stream(RS2_STREAM_COLOR).as<rs2::video_stream_profile>().get_intrinsics();
+		IntrinsicsColor = profile.get_stream(RS2_STREAM_COLOR).as<rs2::video_stream_profile>().get_intrinsics();
 		auto sensor = profile.get_device().first<rs2::depth_sensor>();
 		depth_scale = sensor.get_depth_scale();
 	}
@@ -56,8 +56,13 @@ bool RealSenseInput::WaitForFrame(Frame *frame)
 		if (color_active)
 		{
 			auto color = frames.get_color_frame();
+			if (color.get_profile().stream_type() != RS2_STREAM_COLOR || color.get_profile().format() != RS2_FORMAT_RGB8)
+			{
+				std::cerr << "Frame from RealSense has invalid stream type or format." << std::endl;
+				return false;
+			}
 			frame->SetColorMap(color.get_width(), color.get_height(), (GLushort *)color.get_data(),
-				Eigen::Vector2f(intrinsics.fx, intrinsics.fy), Eigen::Vector2f(intrinsics.ppx, intrinsics.ppy));
+				Eigen::Vector2f(IntrinsicsColor.fx, IntrinsicsColor.fy), Eigen::Vector2f(IntrinsicsColor.ppx, IntrinsicsColor.ppy));
 		}
 		
 		

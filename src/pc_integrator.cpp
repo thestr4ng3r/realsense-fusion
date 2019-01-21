@@ -111,7 +111,7 @@ GLuint PC_Integrator::genComputeProg()
 				float tsdf_avg = (tsdf_last * w_last + tsdf * add_weight) / (w_last + add_weight);
 
 				//COLOR
-				vec4 color_avg = vec4(0.f, 0.f, 0.f, 1.f);
+				vec4 color_avg = vec4(0.f, 1.f, 0.f, 1.f);
 				if(activateColors != 0)
 				{
 					
@@ -171,6 +171,7 @@ GLuint PC_Integrator::genComputeProg()
 	cam_dir_uniform = glGetUniformLocation(progHandle, "cam_dir");
 	tsdf_tex_uniform = glGetUniformLocation(progHandle, "tsdf_tex");
 	weight_tex_uniform = glGetUniformLocation(progHandle, "weight_tex");
+	color_tex_uniform = glGetUniformLocation(progHandle, "color_tex");
 	depth_scale_uniform = glGetUniformLocation(progHandle, "depth_scale");
 	max_truncation_uniform = glGetUniformLocation(progHandle, "max_truncation");
 	min_truncation_uniform = glGetUniformLocation(progHandle, "min_truncation");

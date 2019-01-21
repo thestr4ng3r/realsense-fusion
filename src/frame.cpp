@@ -151,7 +151,7 @@ void Frame::SetDepthMap(int width, int height, GLushort *data, float depth_scale
 void Frame::SetColorMap(int width, int height, GLushort *data, const Eigen::Vector2f &focal_length, const Eigen::Vector2f &center)
 {
 	glBindTexture(GL_TEXTURE_2D, color_tex);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_INT, data);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
 
 	intrinsics_color_focal_length = focal_length;
 	intrinsics_color_center = center;

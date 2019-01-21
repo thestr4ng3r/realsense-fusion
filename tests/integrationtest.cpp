@@ -14,10 +14,15 @@
 
 int main(int argc, char *argv[])
 {
+
+	bool COLOR_ACTIVE = true;
+	bool FILTER_ACTIVE = true;
+
 	Input *input;
 #if defined(ENABLE_INPUT_REALSENSE)
 	input = new RealSenseInput();
-	input->setFilterActive(true);
+	input->setFilterActive(FILTER_ACTIVE);
+	input->setColorActive(COLOR_ACTIVE);
 #if defined(ENABLE_INPUT_KINECT)
 	//#warning "Building with both RealSense and Kinect. Using RealSense."
 #endif
@@ -40,7 +45,7 @@ int main(int argc, char *argv[])
 	glmodel.CopyFrom(&cpu_model);
 	*/
 
-	CPUModel cpu_model (256, 256, 256, 1.0f / 256.0f, 0.3f, -0.3f, false);
+	CPUModel cpu_model (256, 256, 256, 1.0f / 256.0f, 0.3f, -0.3f, COLOR_ACTIVE);
 	//cpu_model.GenerateSphere(0.3f, Eigen::Vector3f(0.0f, 0.0f, 0.0f));
 
 	GLModel glmodel(
@@ -51,7 +56,7 @@ int main(int argc, char *argv[])
 		cpu_model.GetMaxTruncation(),
 		cpu_model.GetMinTruncation(),
 		cpu_model.GetModelOrigin(),
-		false);
+		COLOR_ACTIVE);
 
 	glmodel.CopyFrom(&cpu_model);
 

@@ -24,6 +24,7 @@ class PC_Integrator
 		GLint cam_dir_uniform;
 		GLint weight_tex_uniform;
 		GLint tsdf_tex_uniform;
+		GLint color_tex_uniform;
 		GLint depth_scale_uniform;
 		GLint max_truncation_uniform;
 		GLint min_truncation_uniform;
