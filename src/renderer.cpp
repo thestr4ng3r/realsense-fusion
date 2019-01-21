@@ -73,6 +73,8 @@ uniform sampler3D tsdf_tex;
 
 uniform mat4 modelview_matrix;
 
+uniform vec3 cam_pos;
+
 in vec3 world_pos;
 in vec3 world_dir;
 
@@ -99,7 +101,7 @@ vec3 Normal(vec3 world_pos, float epsilon)
 bool TraceRay(inout vec3 world_pos, vec3 world_dir)
 {
 	world_dir = normalize(world_dir);
-	world_pos += world_dir * 0.00001;
+	//world_pos += world_dir * 0.00001;
 
 	while(true)
 	{
@@ -125,9 +127,36 @@ float Phong(vec3 normal, vec3 light_dir, float specular, float exponent)
 	return lambert + spec;
 }
 
+float RayBoxIntersection(vec3 origin, vec3 dir, in vec3 box_min, in vec3 box_max)
+{
+	// see Williams, Amy, et al. "An efficient and robust ray-box intersection algorithm."
+
+    vec3 dir_inv = vec3(1.0 / dir.x, 1.0 / dir.y, 1.0 / dir.z);
+
+    float tmin;
+    if(dir_inv.x >= 0.0)
+        tmin = (box_min.x - origin.x) * dir_inv.x;
+    else
+        tmin = (box_max.x - origin.x) * dir_inv.x;
+
+    if(dir_inv.y >= 0.0)
+        tmin = max(tmin, (box_min.y - origin.y) * dir_inv.y);
+    else
+        tmin = max(tmin, (box_max.y - origin.y) * dir_inv.y);
+
+    if(dir_inv.z >= 0.0)
+        tmin = max(tmin, (box_min.z - origin.z) * dir_inv.z);
+    else
+        tmin = max(tmin, (box_max.z - origin.z) * dir_inv.z);
+
+	return tmin;
+}
+
 void main()
 {
-	vec3 world_pos_cur = world_pos;
+	float dist = RayBoxIntersection(cam_pos, world_dir, GridBoxWorldMin(), GridBoxWorldMax());
+	vec3 world_pos_cur = cam_pos + world_dir * max(dist, 0.0001);
+
 	if(!TraceRay(world_pos_cur, world_dir))
 		discard;
 	vec3 normal = Normal(world_pos_cur, 0.001);
@@ -426,16 +455,17 @@ void Renderer::Render(GLModel *model, Frame *frame, CameraTransform *camera_tran
 	//std::cout << "projection:\n" << projection << std::endl;
 	Eigen::Matrix4f mvp_matrix = projection_matrix * modelview_matrix;
 
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_FRONT);
 	glDisable(GL_DEPTH_TEST);
+	glDepthMask(GL_FALSE);
+
 	glBindVertexArray(vao);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-	glEnable(GL_CULL_FACE);
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, model->GetParamsBuffer());
 	glBindBufferBase(GL_UNIFORM_BUFFER, 1, frame->GetCameraIntrinsicsBuffer());
 
 	glUseProgram(box_program);
-	glCullFace(GL_FRONT);
-	glDepthMask(GL_FALSE);
 	glUniformMatrix4fv(box_mvp_matrix_uniform, 1, GL_FALSE, mvp_matrix.data());
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, nullptr);
 
@@ -443,13 +473,11 @@ void Renderer::Render(GLModel *model, Frame *frame, CameraTransform *camera_tran
 	glDrawBuffers(3, draw_buffers);
 
 	glUseProgram(program);
-	glCullFace(GL_BACK);
 	glUniformMatrix4fv(mvp_matrix_uniform, 1, GL_FALSE, mvp_matrix.data());
 	glUniformMatrix4fv(modelview_matrix_uniform, 1, GL_FALSE, modelview_matrix.data());
 	glUniform3fv(cam_pos_uniform, 1, cam_pos.data());
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D, model->GetTSDFTex());
-	glDepthMask(GL_TRUE);
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, nullptr);
 
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);

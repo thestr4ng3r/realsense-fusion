@@ -304,7 +304,7 @@ ICP::ICP()
 	glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(float) * MATRIX_COLUMNS * MATRIX_ROWS, nullptr, GL_DYNAMIC_READ);
 
 	distance_threshold = 0.1f;
-	angle_threshold = 0.0f;
+	angle_threshold = 0.5f;
 
 #ifdef ICP_DEBUG_TEX
 	glGenTextures(1, &debug_tex);

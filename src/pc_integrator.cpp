@@ -83,7 +83,7 @@ GLuint PC_Integrator::genComputeProg()
 				ivec2 p = ivec2(ProjectCameraToImage(v.xyz));				
 
 				ivec2 depth_res = textureSize(depth_map, 0);
-				if( p.x < 0 || p.x > depth_res.x || p.y < 0 || p.y > depth_res.y  )
+				if( p.x < 0 || p.x > depth_res.x || p.y < 0 || p.y > depth_res.y || v.z > 0.0 )
 				{
 					continue;
 				}

@@ -37,4 +37,14 @@ vec3 GridExtent()
 {
 	return vec3(grid_params.res) * grid_params.cell_size;
 }
+
+vec3 GridBoxWorldMin()
+{
+	return grid_params.origin;
+}
+
+vec3 GridBoxWorldMax()
+{
+	return grid_params.origin + GridExtent();
+}
 )glsl"
