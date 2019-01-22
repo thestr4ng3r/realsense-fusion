@@ -88,6 +88,21 @@ int main(int argc, char *argv[])
 			gl_model.Reset();
 			camera_transform.SetTransform(reset_transform);
 		}
+		if(ImGui::Button("Export Mesh"))
+		{
+			CPUModel *cpu_model = new CPUModel(
+					gl_model.GetResolutionX(), 
+					gl_model.GetResolutionY(),
+					gl_model.GetResolutionZ(),
+					gl_model.GetCellSize(),
+					gl_model.GetMaxTruncation(),
+					gl_model.GetMinTruncation(),
+					gl_model.GetModelOrigin(),
+					gl_model.GetColorsActive());
+			gl_model.CopyTo(cpu_model);
+			// TODO: do marching cubes here and export the mesh
+			delete cpu_model;
+		}
 		ImGui::BeginChild("ICP", ImVec2(0, 0), true);
 			ImGui::Checkbox("Enable Tracking", &enable_tracking);
 			ImGui::SliderInt("Iterations", &icp_passes, 1, 10);

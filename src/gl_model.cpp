@@ -100,14 +100,32 @@ void GLModel::CopyFrom(CPUModel *cpu_model)
 	glBindTexture(GL_TEXTURE_3D, tsdf_tex);
 	glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, resolutionX, resolutionY, resolutionZ, 0, GL_RED, GL_FLOAT, cpu_model->GetData());
 
-	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_3D, weight_tex);
 	glTexImage3D(GL_TEXTURE_3D, 0, GL_R16UI, resolutionX, resolutionY, resolutionZ, 0, GL_RED_INTEGER, GL_UNSIGNED_SHORT, cpu_model->GetWeights());
 
 	if (colorsActive)
 	{
-		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_3D, color_tex);
 		glTexImage3D(GL_TEXTURE_3D, 0, GL_R32F, resolutionX, resolutionY, resolutionZ, 0, GL_RGBA, GL_FLOAT, cpu_model->GetColor());
+	}
+}
+
+void GLModel::CopyTo(CPUModel *cpu_model)
+{
+	assert(cpu_model->GetResolutionX() == resolutionX);
+	assert(cpu_model->GetResolutionY() == resolutionY);
+	assert(cpu_model->GetResolutionZ() == resolutionZ);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_3D, tsdf_tex);
+	glGetTexImage(GL_TEXTURE_3D, 0, GL_RED, GL_FLOAT, cpu_model->GetData());
+
+	glBindTexture(GL_TEXTURE_3D, weight_tex);
+	glGetTexImage(GL_TEXTURE_3D, 0, GL_RED_INTEGER, GL_UNSIGNED_SHORT, cpu_model->GetWeights());
+
+	if (colorsActive && cpu_model->GetColorsActive())
+	{
+		glBindTexture(GL_TEXTURE_3D, color_tex);
+		glGetTexImage(GL_TEXTURE_3D, 0, GL_RED, GL_FLOAT, cpu_model->GetColor());
 	}
 }

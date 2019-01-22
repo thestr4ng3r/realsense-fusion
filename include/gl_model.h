@@ -24,6 +24,7 @@ class GLModel: public Model
 
 		void Reset() override;
 		void CopyFrom(CPUModel *cpu_model);
+		void CopyTo(CPUModel *cpu_model);
 
 		GLuint GetColorTex()		{ return color_tex; }
 		GLuint GetTSDFTex()			{ return tsdf_tex; }
