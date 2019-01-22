@@ -4,9 +4,9 @@ using namespace pcl;
 using namespace std;
 using namespace Eigen;
 
-Marching_Cubes::Marching_Cubes() 
+Marching_Cubes::Marching_Cubes(CPUModel* model)
 {
-
+	this->model = model;
 }
 
 Marching_Cubes::~Marching_Cubes()
@@ -468,14 +468,18 @@ Marching_Cubes::~Marching_Cubes()
 
 	}
 
-void Marching_Cubes::process_mc(CPUModel* model)
+// process marching cubes
+void Marching_Cubes::process_mc()
 {
-	std::string filenameOut = "result.off";
+	// path to result file
+	std::string filenameOut = "C:/Users/ospoe/3dscanning/marching_cubes_result.off"; 
 
 	// extract the zero iso-surface using marching cubes
 	Mesh mesh;
 	for (unsigned int x = 0; x < model->GetResolutionX() - 1; x++)
 	{
+		std::cerr << "Marching Cubes on slice " << x << " of " << model->GetResolutionX() << std::endl;
+
 		for (unsigned int y = 0; y < model->GetResolutionY() - 1; y++)
 		{
 			for (unsigned int z = 0; z < model->GetResolutionZ() - 1; z++)

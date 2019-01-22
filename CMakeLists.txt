@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.2)
 
 option(BUILD_INPUT_REALSENSE "Build with RealSense support" ON)
-option(BUILD_INPUT_KINECT "Build with Kinect support" ON)
+option(BUILD_INPUT_KINECT "Build with Kinect support" OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
@@ -41,7 +41,8 @@ set(SOURCE_FILE_MAIN
 		src/main.cpp)
 
 set(MODEL_TEST_FILES
-		tests/modeltest.cpp
+		tests/marchingcubestest.cpp
+		src/marching_cubes.cpp
 		src/model.cpp)
 
 
@@ -87,6 +88,9 @@ target_link_libraries(scanner ${PCL_LIBRARIES} ${OPENGL_LIBRARIES} ${GLEW_LIBRAR
 add_executable(integrationtest ${SOURCE_FILES} ${HEADER_FILES} tests/integrationtest.cpp ${IMGUI_SOURCE_FILES})
 target_link_libraries(integrationtest ${PCL_LIBRARIES} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} glfw)
 
+add_executable(marchingcubestest ${SOURCE_FILES} ${HEADER_FILES} tests/marchingcubestest.cpp ${IMGUI_SOURCE_FILES})
+target_link_libraries(marchingcubestest ${PCL_LIBRARIES} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} glfw)
+
 
 
 if(BUILD_INPUT_REALSENSE)
@@ -94,6 +98,7 @@ if(BUILD_INPUT_REALSENSE)
 	#target_link_libraries(modeltest "${realsense2_LIBRARY}")
 	#target_link_libraries(renderertest "${realsense2_LIBRARY}")
 	target_link_libraries(integrationtest "${realsense2_LIBRARY}")
+	target_link_libraries(marchingcubestest "${realsense2_LIBRARY}")
 	if(realsense2_DLL)
 		message(STATUS "Adding Post build script to copy realsense2.dll to project's binary folder")
 		message(STATUS "Will try to copy ${realsense2_DLL} to ${CMAKE_CURRENT_BINARY_DIR}")
