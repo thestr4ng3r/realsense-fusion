@@ -13,6 +13,7 @@
 #include "camera_transform.h"
 #include "pc_integrator.h"
 #include "icp.h"
+#include "marching_cubes.h"
 
 //#include <pcl/visualization/cloud_viewer.h>
 //#include <pcl/filters/passthrough.h>
@@ -100,7 +101,10 @@ int main(int argc, char *argv[])
 					gl_model.GetModelOrigin(),
 					gl_model.GetColorsActive());
 			gl_model.CopyTo(cpu_model);
-			// TODO: do marching cubes here and export the mesh
+			
+			// export the mesh with marching cubes
+			Marching_Cubes mc(cpu_model);
+			mc.process_mc();
 			delete cpu_model;
 		}
 		ImGui::BeginChild("ICP", ImVec2(0, 0), true);
