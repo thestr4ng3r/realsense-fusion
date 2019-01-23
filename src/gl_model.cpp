@@ -57,7 +57,7 @@ void GLModel::Init()
 		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, resolutionX, resolutionY, resolutionZ, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA8, resolutionX, resolutionY, resolutionZ, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 	}
 
 	// see glsl_common_grid.inl
@@ -106,7 +106,7 @@ void GLModel::CopyFrom(CPUModel *cpu_model)
 	if (colorsActive)
 	{
 		glBindTexture(GL_TEXTURE_3D, color_tex);
-		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA, resolutionX, resolutionY, resolutionZ, 0, GL_RGBA, GL_UNSIGNED_BYTE, cpu_model->GetColor());
+		glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA8, resolutionX, resolutionY, resolutionZ, 0, GL_RGBA, GL_UNSIGNED_BYTE, cpu_model->GetColor());
 	}
 }
 

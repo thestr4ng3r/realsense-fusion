@@ -51,9 +51,9 @@ GLuint PC_Integrator::genComputeProg()
 
 		layout(r32f, binding = 0) uniform image3D  tsdf_tex;
 		layout(r16ui, binding = 1) uniform uimage3D  weight_tex;
-		layout(rgba8ui, binding = 2) uniform uimage3D color_tex;
+		layout(rgba8, binding = 2) uniform image3D color_tex;
 		layout(binding = 0) uniform usampler2D depth_map;
-		layout(binding = 1) uniform usampler2D color_map;
+		layout(binding = 1) uniform sampler2D color_map;
 
 		uniform mat4 cam_modelview;
 		uniform vec3 cam_pos;
@@ -111,7 +111,7 @@ GLuint PC_Integrator::genComputeProg()
 				float tsdf_avg = (tsdf_last * w_last + tsdf * add_weight) / (w_last + add_weight);
 
 				//COLOR
-				vec4 color_avg = vec4(0.f, 1.f, 0.f, 1.f);
+				vec4 color_avg = vec4(0.1, 0.4, 0.7, 1);
 				if(activateColors != 0)
 				{
 					
@@ -119,11 +119,13 @@ GLuint PC_Integrator::genComputeProg()
 					ivec2 color_res = textureSize(color_map, 0);
 					if( pc.x < 0 || pc.x > color_res.x || pc.y < 0 || pc.y > color_res.y  )
 					{
-						continue;
+						//continue;
 					}
 					vec4 color = texelFetch(color_map, pc,0);
 
-					vec4 color_avg = (color * w_last + color * add_weight) / (w_last + add_weight);
+					color_avg = color;
+
+					//vec4 color_avg = (color * w_last + color * add_weight) / (w_last + add_weight);
 					
 				}
 
@@ -133,7 +135,7 @@ GLuint PC_Integrator::genComputeProg()
 				imageStore(weight_tex, xyz, uvec4(w_now,0.0,0.0,0.0));
 				//if(activateColors != 0)
 				//{
-				imageStore(color_tex, xyz, uvec4(0, 128, 0, 0)/*color_avg*/);
+				imageStore(color_tex, xyz, color_avg);
 				//}
 			}
 		}		
@@ -180,6 +182,7 @@ GLuint PC_Integrator::genComputeProg()
 
 	glUniform1i(tsdf_tex_uniform, 0); //Image Unit 0
 	glUniform1i(weight_tex_uniform, 1);
+	glUniform1i(color_tex_uniform, 2);
 
 	return progHandle;
 }
@@ -212,7 +215,7 @@ void PC_Integrator::integrate(Frame *frame, CameraTransform *camera_transform)
 	glUniform1i(activateColors_uniform, this->glModel->GetColorsActive());
 	glBindImageTexture(0, glModel->GetTSDFTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
 	glBindImageTexture(1, glModel->GetWeightTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R16UI);
-	glBindImageTexture(2, glModel->GetColorTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8UI);
+	glBindImageTexture(2, glModel->GetColorTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, this->glModel->GetParamsBuffer());
 	glBindBufferBase(GL_UNIFORM_BUFFER, 1, frame->GetCameraIntrinsicsBuffer());
 	glBindBufferBase(GL_UNIFORM_BUFFER, 2, frame->GetCameraIntrinsicsColorBuffer());
