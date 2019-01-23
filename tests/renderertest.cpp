@@ -6,7 +6,7 @@
 int main(int argc, char *argv[])
 {
 	Window window("new",1280,640);
-	Renderer renderer(&window);
+	Renderer renderer(&window, false);
 	
 	auto cpu_model = new CPUModel(128, 128, 128, 1.0f / 128.0f,false);
 	cpu_model->GenerateSphere(0.3f, Eigen::Vector3f(0.0f, 0.0f, 0.0f));

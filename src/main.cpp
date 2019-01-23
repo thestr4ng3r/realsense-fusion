@@ -31,6 +31,7 @@ int main(int argc, char *argv[])
 	if(argc >= 2)
 		rs_config.enable_device_from_file(std::string(argv[1]));
 	input = new RealSenseInput(rs_config);
+	input->setColorActive(true);
 #if defined(ENABLE_INPUT_KINECT)
 //#warning "Building with both RealSense and Kinect. Using RealSense."
 #endif
@@ -42,9 +43,9 @@ int main(int argc, char *argv[])
 
 	Frame frame;
 
-	GLModel gl_model(256, 256, 256, 2.0f / 128.0f, 0.3f, -0.3f, false);
+	GLModel gl_model(256.f, 256.f, 256.f, 1.0f / 256.f, 0.3f, -0.3f, true);
 
-	Renderer renderer(&window);
+	Renderer renderer(&window, true);
 
 	CameraTransform camera_transform;
 

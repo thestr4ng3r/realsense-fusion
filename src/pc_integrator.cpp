@@ -125,7 +125,7 @@ GLuint PC_Integrator::genComputeProg()
 
 					color_avg = color;
 
-					//vec4 color_avg = (color * w_last + color * add_weight) / (w_last + add_weight);
+					color_avg = (color * w_last + color * add_weight) / (w_last + add_weight);
 					
 				}
 
@@ -133,10 +133,10 @@ GLuint PC_Integrator::genComputeProg()
 
 				imageStore(tsdf_tex, xyz, vec4(tsdf_avg,0.0,0.0,0.0));
 				imageStore(weight_tex, xyz, uvec4(w_now,0.0,0.0,0.0));
-				//if(activateColors != 0)
-				//{
+				if(activateColors != 0)
+				{
 				imageStore(color_tex, xyz, color_avg);
-				//}
+				}
 			}
 		}		
 	    )glsl";

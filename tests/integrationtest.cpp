@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
 
 	PC_Integrator integrator (&glmodel);
 
-	Renderer renderer(&window);
+	Renderer renderer(&window, true);
 
 	CameraTransform camera_transform;
 	Eigen::Affine3f t = Eigen::Affine3f::Identity();

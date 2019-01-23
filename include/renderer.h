@@ -23,6 +23,8 @@ class Renderer
 		GLint modelview_matrix_uniform = -1;
 		GLint cam_pos_uniform = -1;
 		GLint tsdf_tex_uniform = -1;
+		GLint color_grid_tex_uniform = -1;
+		GLint activate_colors_uniform = 0;
 
 		GLuint box_program = 0;
 		GLint box_mvp_matrix_uniform = -1;
@@ -35,13 +37,15 @@ class Renderer
 		int fbo_width;
 		int fbo_height;
 
+		bool renderColor = false;
+
 		Eigen::Matrix4f modelview_matrix;
 		Eigen::Matrix4f projection_matrix;
 
 		void InitResources();
 
 	public:
-		explicit Renderer(Window *window);
+		explicit Renderer(Window *window, bool renderColor);
 		~Renderer();
 
 		GLuint GetVertexTex()					{ return vertex_tex; }

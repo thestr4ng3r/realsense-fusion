@@ -51,6 +51,8 @@ R"glsl(
 
 uniform mat4 mvp_matrix;
 uniform vec3 cam_pos;
+uniform int activate_colors;
+
 
 layout(location = 0) in vec3 vertex_pos;
 
@@ -69,11 +71,14 @@ static const char *fragment_shader_code =
 "#version 450 core\n"
 #include "glsl_common_grid.inl"
 R"glsl(
-uniform sampler3D tsdf_tex;
+layout(binding = 0) uniform sampler3D tsdf_tex;
+layout(binding = 1) uniform sampler3D color_grid_tex;
 
 uniform mat4 modelview_matrix;
 
 uniform vec3 cam_pos;
+
+uniform int activate_colors;
 
 in vec3 world_pos;
 in vec3 world_dir;
@@ -127,6 +132,13 @@ float Phong(vec3 normal, vec3 light_dir, float specular, float exponent)
 	return lambert + spec;
 }
 
+vec4 PhongColor(vec4 c ,vec3 normal, vec3 light_dir, float specular, float exponent)
+{
+	float lambert = Lambert(normal, light_dir) ;
+	float spec = pow(lambert, exponent) * specular ;
+	return vec4(lambert + spec) * c;
+}
+
 float RayBoxIntersection(vec3 origin, vec3 dir, in vec3 box_min, in vec3 box_max)
 {
 	// see Williams, Amy, et al. "An efficient and robust ray-box intersection algorithm."
@@ -161,12 +173,17 @@ void main()
 		discard;
 	vec3 normal = Normal(world_pos_cur, 0.001);
 
-	float l = 0.1;
-	l += 0.5 * Phong(normal, normalize(vec3(1.0, 1.0, 1.0)), 0.5, 64.0);
-
+	vec4 l = vec4(0.0, 0.0, 0.0, 0.0);
+	l += 0.5 * Phong(normal,normalize(vec3(1.0, 1.0, 1.0)), 0.5, 64.0);
+	
+	if(activate_colors!=0)
+	{
+		vec4 color = texture(color_grid_tex, WorldToGrid(world_pos_cur), 0);
+		l = PhongColor(color, normal,normalize(vec3(1.0, 1.0, 1.0)), 0.5, 64.0);
+	}
 	//vec4 screen_coord = mvp_matrix * vec4(world_pos_cur, 1.0);
 	//gl_FragDepth = screen_coord.z / screen_coord.w;
-	color_out = vec4(vec3(l), 1.0);
+	color_out = l;
 	vertex_out = world_pos_cur;
 	normal_out = normal;
 }
@@ -216,9 +233,10 @@ void main()
 )glsl";
 
 
-Renderer::Renderer(Window *window)
+Renderer::Renderer(Window *window, bool renderColor)
 {
 	this->window = window;
+	this->renderColor = renderColor;
 	InitResources();
 }
 
@@ -286,6 +304,18 @@ void Renderer::InitResources()
 		glAttachShader(program, frag_shader);
 		glLinkProgram(program);
 
+		int rvalue;
+		glGetShaderiv(frag_shader, GL_COMPILE_STATUS, &rvalue);
+		if (!rvalue)
+		{
+			fprintf(stderr, "Error in compiling the compute shader\n");
+			GLchar log[10240];
+			GLsizei length;
+			glGetShaderInfoLog(frag_shader, 10239, &length, log);
+			fprintf(stderr, "Compiler log:\n%s\n", log);
+			exit(40);
+		}
+
 		GLint result, log_len;
 		glGetProgramiv(program, GL_LINK_STATUS, &result);
 		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &log_len);
@@ -307,9 +337,14 @@ void Renderer::InitResources()
 	modelview_matrix_uniform = glGetUniformLocation(program, "modelview_matrix");
 	cam_pos_uniform = glGetUniformLocation(program, "cam_pos");
 	tsdf_tex_uniform = glGetUniformLocation(program, "tsdf_tex");
+	activate_colors_uniform = glGetUniformLocation(program, "activate_colors");
+	if(renderColor)
+		color_grid_tex_uniform = glGetUniformLocation(program, "color_grid_tex");
 
 	glUseProgram(program);
 	glUniform1i(tsdf_tex_uniform, 0);
+	if (renderColor)
+		glUniform1i(color_grid_tex_uniform, 1);
 
 	{
 		GLuint vert_shader = glCreateShader(GL_VERTEX_SHADER);
@@ -391,6 +426,8 @@ void Renderer::Render(GLModel *model, Frame *frame, CameraTransform *camera_tran
 {
 	int width = frame->GetDepthWidth();
 	int height = frame->GetDepthHeight();
+
+	renderColor = model->GetColorsActive();
 
 	if(width != fbo_width || height != fbo_height)
 	{
@@ -476,8 +513,14 @@ void Renderer::Render(GLModel *model, Frame *frame, CameraTransform *camera_tran
 	glUniformMatrix4fv(mvp_matrix_uniform, 1, GL_FALSE, mvp_matrix.data());
 	glUniformMatrix4fv(modelview_matrix_uniform, 1, GL_FALSE, modelview_matrix.data());
 	glUniform3fv(cam_pos_uniform, 1, cam_pos.data());
+	glUniform1i(activate_colors_uniform, renderColor);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D, model->GetTSDFTex());
+	if (renderColor)
+	{
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_3D, model->GetColorTex());
+	}
 	glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, nullptr);
 
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
