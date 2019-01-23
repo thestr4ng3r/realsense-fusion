@@ -123,7 +123,7 @@ float[RESIDUAL_COMPONENTS] CreateResidual(ivec2 coord)
 	vec3 s = vertex_current_world;
 
 #ifdef ICP_DEBUG_TEX
-	imageStore(debug_out, coord, vec4(dir_world, 43.0));
+	imageStore(debug_out, coord, vec4(dir_world, 1.0));
 #endif
 
 	return Residual(cross(s, n), n, dot(n, dir_world));

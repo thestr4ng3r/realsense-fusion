@@ -8,7 +8,7 @@ class Frame;
 class CameraTransform;
 class Renderer;
 
-//#define ICP_DEBUG_TEX
+#define ICP_DEBUG_TEX
 
 class ICP
 {

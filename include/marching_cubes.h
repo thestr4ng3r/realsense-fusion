@@ -19,7 +19,7 @@ public:
 	struct MC_Gridcell;
 	struct MC_Gridcell_2;
 
-	void process_mc();
+	void process_mc(const std::string &filename);
 	bool ProcessVolumeCell(CPUModel* model, int x, int y, int z, double iso, Mesh* mesh);
 	int Polygonise(MC_Gridcell grid, double isolevel, MC_Triangle* triangles);
 	Eigen::Vector3f VertexInterp(double isolevel, const Eigen::Vector3f& p1, const Eigen::Vector3f& p2, double valp1, double valp2);

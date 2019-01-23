@@ -469,11 +469,8 @@ Marching_Cubes::~Marching_Cubes()
 	}
 
 // process marching cubes
-void Marching_Cubes::process_mc()
+void Marching_Cubes::process_mc(const std::string &filename)
 {
-	// path to result file
-	std::string filenameOut = "C:/Users/ospoe/3dscanning/marching_cubes_result.off"; 
-
 	// extract the zero iso-surface using marching cubes
 	Mesh mesh;
 	for (unsigned int x = 0; x < model->GetResolutionX() - 1; x++)
@@ -490,7 +487,7 @@ void Marching_Cubes::process_mc()
 	}
 
 	// write mesh to file
-	if (!mesh.WriteMesh(filenameOut))
+	if (!mesh.WriteMesh(filename))
 	{
 		std::cout << "ERROR: unable to write output file!" << std::endl;
 	}

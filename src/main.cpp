@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
 			
 			// export the mesh with marching cubes
 			Marching_Cubes mc(cpu_model);
-			mc.process_mc();
+			mc.process_mc("/home/florian/mesh.off");
 			delete cpu_model;
 		}
 		ImGui::BeginChild("ICP", ImVec2(0, 0), true);
