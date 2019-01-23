@@ -107,10 +107,10 @@ GLuint PC_Integrator::genComputeProg()
 				uint w_last = imageLoad(weight_tex, xyz).x;
 				float tsdf_last = imageLoad(tsdf_tex, xyz).x;
 
+				float tsdf_avg;
+				uint w_now;
 
-				float tsdf_avg = (tsdf_last * w_last + tsdf * add_weight) / (w_last + add_weight);
-
-				//COLOR
+				//With COLOR
 				vec4 color_avg = vec4(0.1, 0.4, 0.7, 1);
 				if(activateColors != 0)
 				{
@@ -119,18 +119,23 @@ GLuint PC_Integrator::genComputeProg()
 					ivec2 color_res = textureSize(color_map, 0);
 					if( pc.x < 0 || pc.x > color_res.x || pc.y < 0 || pc.y > color_res.y  )
 					{
-						//continue;
+						continue;
 					}
 					vec4 color = texelFetch(color_map, pc,0);
 
-					color_avg = color;
-
 					color_avg = (color * w_last + color * add_weight) / (w_last + add_weight);
-					
+
+					tsdf_avg = (tsdf_last * w_last + tsdf * add_weight) / (w_last + add_weight);
+
+					w_now = min(max_weight, w_last + add_weight);
 				}
+				else {
 
-				uint w_now = min(max_weight, w_last + add_weight);
+					tsdf_avg = (tsdf_last * w_last + tsdf * add_weight) / (w_last + add_weight);
 
+					w_now = min(max_weight, w_last + add_weight);	
+				}
+				
 				imageStore(tsdf_tex, xyz, vec4(tsdf_avg,0.0,0.0,0.0));
 				imageStore(weight_tex, xyz, uvec4(w_now,0.0,0.0,0.0));
 				if(activateColors != 0)
