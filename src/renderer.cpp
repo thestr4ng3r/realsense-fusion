@@ -132,11 +132,11 @@ float Phong(vec3 normal, vec3 light_dir, float specular, float exponent)
 	return lambert + spec;
 }
 
-vec4 PhongColor(vec4 c ,vec3 normal, vec3 light_dir, float specular, float exponent)
+vec3 PhongColor(vec3 c,vec3 normal, vec3 light_dir, float specular, float exponent)
 {
 	float lambert = Lambert(normal, light_dir) ;
 	float spec = pow(lambert, exponent) * specular ;
-	return vec4(lambert + spec) * c;
+	return vec3(lambert + spec) * c;
 }
 
 float RayBoxIntersection(vec3 origin, vec3 dir, in vec3 box_min, in vec3 box_max)
@@ -173,17 +173,17 @@ void main()
 		discard;
 	vec3 normal = Normal(world_pos_cur, 0.001);
 
-	vec4 l = vec4(0.0, 0.0, 0.0, 0.0);
+	vec3 l = vec3(0.0, 0.0, 0.0);
 	l += 0.5 * Phong(normal,normalize(vec3(1.0, 1.0, 1.0)), 0.5, 64.0);
 	
 	if(activate_colors!=0)
 	{
-		vec4 color = texture(color_grid_tex, WorldToGrid(world_pos_cur), 0);
+		vec3 color = (texture(color_grid_tex, WorldToGrid(world_pos_cur), 0)).xyz;
 		l = PhongColor(color, normal,normalize(vec3(1.0, 1.0, 1.0)), 0.5, 64.0);
 	}
 	//vec4 screen_coord = mvp_matrix * vec4(world_pos_cur, 1.0);
 	//gl_FragDepth = screen_coord.z / screen_coord.w;
-	color_out = l;
+	color_out = vec4(l, 1.0);
 	vertex_out = world_pos_cur;
 	normal_out = normal;
 }

@@ -5,7 +5,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-#define MAX_WEIGHT 512
+#define MAX_WEIGHT 255
 
 template<class T>
 Eigen::Matrix<T, 4, 4> PerspectiveMatrix(T fovy, T aspect, T near_clip, T far_clip)
@@ -107,11 +107,10 @@ GLuint PC_Integrator::genComputeProg()
 				uint w_last = imageLoad(weight_tex, xyz).x;
 				float tsdf_last = imageLoad(tsdf_tex, xyz).x;
 
-				float tsdf_avg;
-				uint w_now;
+				float tsdf_avg = (tsdf_last * w_last + tsdf * add_weight) / (w_last + add_weight);
 
-				//With COLOR
-				vec4 color_avg = vec4(0.1, 0.4, 0.7, 1);
+				//COLOR
+				vec4 color_avg;
 				if(activateColors != 0)
 				{
 					
@@ -122,20 +121,17 @@ GLuint PC_Integrator::genComputeProg()
 						continue;
 					}
 					vec4 color = texelFetch(color_map, pc,0);
+					highp uint weight = uint(color.w * 255.0f); //disgusting
 
-					color_avg = (color * w_last + color * add_weight) / (w_last + add_weight);
+					color_avg = (color * weight + color * add_weight) / (weight + add_weight);
+					weight = min(max_weight, weight + add_weight);
 
-					tsdf_avg = (tsdf_last * w_last + tsdf * add_weight) / (w_last + add_weight);
-
-					w_now = min(max_weight, w_last + add_weight);
+					float w = float(weight) / 255.0f;
+				    color = vec4(color.xyz, w);
 				}
-				else {
 
-					tsdf_avg = (tsdf_last * w_last + tsdf * add_weight) / (w_last + add_weight);
+				uint w_now = min(max_weight, w_last + add_weight);
 
-					w_now = min(max_weight, w_last + add_weight);	
-				}
-				
 				imageStore(tsdf_tex, xyz, vec4(tsdf_avg,0.0,0.0,0.0));
 				imageStore(weight_tex, xyz, uvec4(w_now,0.0,0.0,0.0));
 				if(activateColors != 0)
