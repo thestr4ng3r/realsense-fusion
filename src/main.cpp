@@ -14,6 +14,7 @@
 #include "pc_integrator.h"
 #include "icp.h"
 #include "marching_cubes.h"
+#include <chrono>
 
 //#include <pcl/visualization/cloud_viewer.h>
 //#include <pcl/filters/passthrough.h>
@@ -43,7 +44,7 @@ int main(int argc, char *argv[])
 
 	Frame frame;
 
-	GLModel gl_model(256.f, 256.f, 256.f, 1.0f / 256.f, 0.3f, -0.3f, true);
+	GLModel gl_model(256, 256, 256, 2.0f / 256.f, 0.3f, -0.3f, true);
 
 	Renderer renderer(&window, true);
 
@@ -57,8 +58,26 @@ int main(int argc, char *argv[])
 
 	PC_Integrator integrator(&gl_model);
 
+	bool enable_perf_measure = false;
 	bool enable_tracking = true;
 	int icp_passes = 5;
+
+	using clock = std::chrono::steady_clock;
+	using time_point = std::chrono::time_point<clock>;
+	time_point time_begin;
+	time_point time_process_frame;
+	time_point time_icp;
+	std::vector<time_point> time_icp_corr;
+	std::vector<time_point> time_icp_solve;
+	time_point time_integrate;
+	time_point time_render;
+	auto MeasureTime = [&enable_perf_measure](time_point &tp) {
+		if(!enable_perf_measure)
+			return;
+		glFinish();
+		tp = clock::now();
+	};
+
 
 	while(!window.GetShouldTerminate())
 	{
@@ -69,18 +88,48 @@ int main(int argc, char *argv[])
 			std::cerr << "Failed to get frame." << std::endl;
 			continue;
 		}
+
+		MeasureTime(time_begin);
+
 		frame.ProcessFrame();
+
+		MeasureTime(time_process_frame);
 
 		if (enable_tracking)
 		{
+			if(enable_perf_measure)
+			{
+				time_icp_corr.resize(static_cast<unsigned long>(icp_passes));
+				time_icp_solve.resize(static_cast<unsigned long>(icp_passes));
+			}
 			for(int i=0; i<icp_passes; i++)
 			{
 				icp.SearchCorrespondences(&frame, &renderer, camera_transform);
+				if(enable_perf_measure)
+				{
+					glFinish();
+					time_icp_corr[i] = clock::now();
+				}
 				icp.SolveMatrix(&camera_transform);
+				if(enable_perf_measure)
+				{
+					glFinish();
+					time_icp_solve[i] = clock::now();
+				}
 			}
 		}
 
+		MeasureTime(time_icp);
+
 		integrator.integrate(&frame, &camera_transform);
+
+		MeasureTime(time_integrate);
+
+		window.BeginRender();
+		renderer.Render(&gl_model, &frame, &camera_transform);
+
+		MeasureTime(time_render);
+
 
 		window.BeginGUI();
 		ImGui::Begin("Settings");
@@ -108,7 +157,9 @@ int main(int argc, char *argv[])
 			mc.process_mc("/home/florian/mesh.off");
 			delete cpu_model;
 		}
-		ImGui::BeginChild("ICP", ImVec2(0, 0), true);
+
+		if(ImGui::TreeNode("ICP"))
+		{
 			ImGui::Checkbox("Enable Tracking", &enable_tracking);
 			ImGui::SliderInt("Iterations", &icp_passes, 1, 10);
 			float v = icp.GetDistanceThreshold();
@@ -117,12 +168,39 @@ int main(int argc, char *argv[])
 			v = icp.GetAngleThreshold();
 			ImGui::SliderFloat("Angle Threshold", &v, -1.0f, 1.0f, "%.3f");
 			icp.SetAngleThreshold(v);
-		ImGui::EndChild();
+			ImGui::TreePop();
+		}
+
+		if(ImGui::TreeNode("Performance"))
+		{
+			bool enable_perf_measure_new = enable_perf_measure;
+			ImGui::Checkbox("Measure Performance", &enable_perf_measure_new);
+			if(enable_perf_measure)
+			{
+				auto RenderDuration = [](const char *title, const time_point &from, const time_point &to) {
+					ImGui::Text("%s", title);
+					ImGui::SameLine();
+					std::chrono::duration<float, std::milli> duration = to - from;
+					ImGui::Text("%f", duration.count());
+				};
+
+				RenderDuration("Process Frame", time_begin, time_process_frame);
+				RenderDuration("ICP (total)", time_process_frame, time_icp);
+				for(int i=0; i<icp_passes; i++)
+				{
+					RenderDuration(("  pass " + std::to_string(i) + " corr").c_str(), i > 0 ? time_icp_solve[i-1] : time_process_frame, time_icp_corr[i]);
+					RenderDuration(("  pass " + std::to_string(i) + " solve").c_str(), time_icp_corr[i], time_icp_solve[i]);
+				}
+				RenderDuration("Integrate", time_icp, time_integrate);
+				RenderDuration("Render", time_integrate, time_render);
+			}
+			enable_perf_measure = enable_perf_measure_new;
+			ImGui::TreePop();
+		}
+
 		ImGui::End();
 		window.EndGUI();
 
-		window.BeginRender();
-		renderer.Render(&gl_model, &frame, &camera_transform);
 		window.EndRender();
 	}
 
