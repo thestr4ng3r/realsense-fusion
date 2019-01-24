@@ -113,7 +113,7 @@ void CPUModel::Reset()
 	{
 		for (int x = 0; x < resolutionX*resolutionY*resolutionZ * 4; x++)
 		{
-			color = 0;
+			color[x] = 0;
 		}
 	}
 	
@@ -146,6 +146,14 @@ void CPUModel::GenerateSphere(float radius, Eigen::Vector3f center)
 				float eval = sphere.sdf(world_pos.x(), world_pos.y(), world_pos.z());
 				int cellIndex = IDX(x, y, z);
 				tsdf[cellIndex] = eval;
+				if (colorsActive)
+				{
+					int idx = 4 * IDX(x, y, z);
+					color[idx] = uint8_t(255);
+					color[idx+1] = uint8_t(0);
+					color[idx+1] = uint8_t(255);
+					color[idx+1] = uint8_t(255);
+				}
 			}
 		}
 	}

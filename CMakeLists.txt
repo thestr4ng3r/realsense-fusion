@@ -79,8 +79,8 @@ add_executable(scanner ${SOURCE_FILES} ${HEADER_FILES} ${SOURCE_FILE_MAIN} ${IMG
 target_link_libraries(scanner ${PCL_LIBRARIES} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} glfw)
 
 #Test Executables
-#add_executable(modeltest ${MODEL_TEST_FILES})
-#target_link_libraries(modeltest ${PCL_LIBRARIES})
+add_executable(modeltest ${MODEL_TEST_FILES})
+target_link_libraries(modeltest ${PCL_LIBRARIES})
 
 #add_executable(renderertest ${SOURCE_FILES} ${HEADER_FILES} tests/renderertest.cpp ${IMGUI_SOURCE_FILES})
 #target_link_libraries(renderertest ${PCL_LIBRARIES} ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} glfw)
