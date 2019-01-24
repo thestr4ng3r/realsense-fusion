@@ -16,6 +16,10 @@
 
 #define CORR_LOCAL_SIZE 32
 
+#define ICP_DEBUG_TEX_FORMAT_GLSL "rgba8"
+#define ICP_DEBUG_TEX_INTERNAL_FORMAT GL_RGBA8
+#define ICP_DEBUG_TEX_TYPE GL_UNSIGNED_BYTE
+
 static const char *corr_shader_code =
 "#version 450 core\n"
 #ifdef ICP_DEBUG_TEX
@@ -52,7 +56,7 @@ layout(std430, binding = 0) buffer residuals_out
 };
 
 #ifdef ICP_DEBUG_TEX
-layout(rgba32f, binding = 0) uniform image2D debug_out;
+layout()glsl" ICP_DEBUG_TEX_FORMAT_GLSL R"glsl(, binding = 0) uniform image2D debug_out;
 #endif
 
 float[RESIDUAL_COMPONENTS] Residual(vec3 a, vec3 b, float c)
@@ -79,7 +83,7 @@ float[RESIDUAL_COMPONENTS] CreateResidual(ivec2 coord)
 	// but we're not building a pyramid of doom
 
 #ifdef ICP_DEBUG_TEX
-	imageStore(debug_out, coord, vec4(-1.0));
+	imageStore(debug_out, coord, vec4(0.0, 0.0, 0.0, 1.0));
 #endif
 
 	if(coord.x >= image_res.x || coord.y >= image_res.y)
@@ -123,7 +127,7 @@ float[RESIDUAL_COMPONENTS] CreateResidual(ivec2 coord)
 	vec3 s = vertex_current_world;
 
 #ifdef ICP_DEBUG_TEX
-	imageStore(debug_out, coord, vec4(dir_world, 1.0));
+	imageStore(debug_out, coord, vec4(dir_world * 100.0, 1.0));
 #endif
 
 	return Residual(cross(s, n), n, dot(n, dir_world));
@@ -349,9 +353,9 @@ void ICP::SearchCorrespondences(Frame *frame, Renderer *renderer, const CameraTr
 		debug_tex_width = frame->GetDepthWidth();
 		debug_tex_height = frame->GetDepthHeight();
 		glBindTexture(GL_TEXTURE_2D, debug_tex);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, debug_tex_width, debug_tex_height, 0, GL_RGBA, GL_FLOAT, nullptr);
+		glTexImage2D(GL_TEXTURE_2D, 0, ICP_DEBUG_TEX_INTERNAL_FORMAT, debug_tex_width, debug_tex_height, 0, GL_RGBA, ICP_DEBUG_TEX_TYPE, nullptr);
 	}
-	glBindImageTexture(0, debug_tex, 0, GL_FALSE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+	glBindImageTexture(0, debug_tex, 0, GL_FALSE, 0, GL_WRITE_ONLY, ICP_DEBUG_TEX_INTERNAL_FORMAT);
 #endif
 
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, residuals_buffer);

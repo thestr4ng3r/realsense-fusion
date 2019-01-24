@@ -199,6 +199,13 @@ int main(int argc, char *argv[])
 		}
 
 		ImGui::End();
+
+#ifdef ICP_DEBUG_TEX
+		ImGui::Begin("ICP Debug");
+		ImGui::Image(reinterpret_cast<ImTextureID>(icp.GetDebugTex()), ImVec2((float)icp.GetDebugTexWidth() * 0.3f, (float)icp.GetDebugTexHeight() * 0.3f));
+		ImGui::End();
+#endif
+
 		window.EndGUI();
 
 		window.EndRender();

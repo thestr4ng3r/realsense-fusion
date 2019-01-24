@@ -8,7 +8,7 @@ class Frame;
 class CameraTransform;
 class Renderer;
 
-#define ICP_DEBUG_TEX
+//#define ICP_DEBUG_TEX
 
 class ICP
 {
@@ -50,6 +50,12 @@ class ICP
 
 		void SetDistanceThreshold(float v)	{ distance_threshold = v; }
 		void SetAngleThreshold(float v)		{ angle_threshold = v; }
+
+#ifdef ICP_DEBUG_TEX
+		GLuint GetDebugTex()				{ return debug_tex; }
+		int GetDebugTexWidth()				{ return debug_tex_width; }
+		int GetDebugTexHeight()				{ return debug_tex_height; }
+#endif
 };
 
 #endif //_ICP_H
