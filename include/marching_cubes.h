@@ -10,6 +10,14 @@ class Marching_Cubes {
 
 private:
 	CPUModel* model;
+	int resolutionX;
+	int resolutionY;
+	int resolutionZ;
+
+	int IDX(int x, int y, int z) //3d index -> 1d index
+	{
+		return	(z * resolutionY * resolutionX) + (resolutionX * y) + x;
+	}
 
 public:
 	Marching_Cubes(CPUModel* model);

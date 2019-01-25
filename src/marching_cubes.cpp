@@ -7,6 +7,9 @@ using namespace Eigen;
 Marching_Cubes::Marching_Cubes(CPUModel* model)
 {
 	this->model = model;
+	this->resolutionX = model->GetResolutionX();
+	this->resolutionY = model->GetResolutionY();
+	this->resolutionZ = model->GetResolutionZ();
 }
 
 Marching_Cubes::~Marching_Cubes()
@@ -428,9 +431,9 @@ Marching_Cubes::~Marching_Cubes()
 		tmp = model->TexelToGrid(Eigen::Vector3i(x + 1, y + 1, z + 1));
 		cell.p[7] = Vector3f(tmp[0], tmp[1], tmp[2]);
 
-		int dx = model->GetResolutionX();
-		int dy = model->GetResolutionY();
-		int dz = model->GetResolutionZ();
+		const int dx = model->GetResolutionX();
+		const int dy = model->GetResolutionY();
+		const int dz = model->GetResolutionZ();
 
 		float* tdsf = model->GetData();
 
@@ -443,6 +446,43 @@ Marching_Cubes::~Marching_Cubes()
 		cell.val[5] = tdsf[x*dy*dz + y * dz + (z + 1)];
 		cell.val[6] = tdsf[x*dy*dz + (y + 1) * dz + (z + 1)];
 		cell.val[7] = tdsf[(x + 1)*dy*dz + (y + 1) * dz + (z + 1)];
+
+		// get color
+		uint8_t* colors = model->GetColor();
+
+		int cell_colors[8][4];
+		/*
+		int counter[8];
+		counter[0] = (x + 1)*dy*dz * 4 + y * dz * 4 + z;
+		counter[1] = x * dy*dz * 4 + y * dz * 4 + z;
+		counter[2] = x * dy*dz * 4 + (y + 1) * dz * 4 + z;
+		counter[3] = (x + 1)*dy*dz * 4 + (y + 1) * dz * 4 + z;
+		counter[4] = (x + 1)*dy*dz * 4 + y * dz * 4 + (z + 1);
+		counter[5] = x * dy*dz * 4 + y * dz * 4 + (z + 1);
+		counter[6] = x * dy*dz * 4 + (y + 1) * dz * 4 + (z + 1);
+		counter[7] = (x + 1)*dy*dz * 4 + (y + 1) * dz * 4 + (z + 1);
+		*/
+		int idx = 4 * IDX(x, y, z);
+		for (int i = 0; i < 8; i++)
+		{
+			for (int j = 0; j < 4; j++)
+			{
+				cell_colors[i][j] = (int)colors[idx + j];
+			}
+		}
+
+		int face_color[3] = { 0,0,0 };
+
+		for (int i = 0; i < 8; i++)
+		{
+			face_color[0] = face_color[0] + cell_colors[i][0];
+			face_color[1] = face_color[1] + cell_colors[i][1];
+			face_color[2] = face_color[2] + cell_colors[i][2];
+		}
+		face_color[0] = face_color[0] / 8;
+		face_color[1] = face_color[1] / 8;
+		face_color[2] = face_color[2] / 8;
+
 
 		MC_Triangle tris[6];
 		int numTris = Polygonise(cell, iso, tris);
@@ -461,7 +501,7 @@ Marching_Cubes::~Marching_Cubes()
 			vhandle[1] = mesh->AddVertex(v1);
 			vhandle[2] = mesh->AddVertex(v2);
 
-			mesh->AddFace(vhandle[0], vhandle[1], vhandle[2]);
+			mesh->AddFace(vhandle[0], vhandle[1], vhandle[2], face_color);
 		}
 
 		return true;

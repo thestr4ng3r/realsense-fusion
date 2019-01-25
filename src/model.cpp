@@ -151,8 +151,8 @@ void CPUModel::GenerateSphere(float radius, Eigen::Vector3f center)
 					int idx = 4 * IDX(x, y, z);
 					color[idx] = uint8_t(255);
 					color[idx+1] = uint8_t(0);
-					color[idx+1] = uint8_t(255);
-					color[idx+1] = uint8_t(255);
+					color[idx+2] = uint8_t(0);
+					color[idx+3] = uint8_t(255);
 				}
 			}
 		}

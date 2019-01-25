@@ -15,8 +15,9 @@ struct Triangle
 	unsigned int idx0;
 	unsigned int idx1;
 	unsigned int idx2;
-	Triangle(unsigned int _idx0, unsigned int _idx1, unsigned int _idx2) :
-		idx0(_idx0), idx1(_idx1), idx2(_idx2)
+	int color[3];
+	Triangle(unsigned int _idx0, unsigned int _idx1, unsigned int _idx2, int _color[3]) :
+		idx0(_idx0), idx1(_idx1), idx2(_idx2), color{ _color[0], _color[1], _color[2] }
 	{}
 };
 
@@ -37,10 +38,10 @@ public:
 		return vId;
 	}
 
-	unsigned int AddFace(unsigned int idx0, unsigned int idx1, unsigned int idx2)
+	unsigned int AddFace(unsigned int idx0, unsigned int idx1, unsigned int idx2, int color[3])
 	{
 		unsigned int fId = (unsigned int)m_triangles.size();
-		Triangle triangle(idx0, idx1, idx2);
+		Triangle triangle(idx0, idx1, idx2, color);
 		m_triangles.push_back(triangle);
 		return fId;
 	}
@@ -74,7 +75,8 @@ public:
 		// save faces
 		for (unsigned int i = 0; i < m_triangles.size(); i++)
 		{
-			outFile << "3 " << m_triangles[i].idx0 << " " << m_triangles[i].idx1 << " " << m_triangles[i].idx2 << std::endl;
+			outFile << "3 " << m_triangles[i].idx0 << " " << m_triangles[i].idx1 << " " << m_triangles[i].idx2 <<
+				" " << m_triangles[i].color[0] << " " << m_triangles[i].color[1] << " " << m_triangles[i].color[2] << std::endl;
 		}
 
 		// close file
