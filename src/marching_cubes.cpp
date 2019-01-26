@@ -1,6 +1,5 @@
 #include <marching_cubes.h>
 
-using namespace pcl;
 using namespace std;
 using namespace Eigen;
 

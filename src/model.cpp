@@ -2,7 +2,7 @@
 #include "model.h"
 #include "implicit.h"
 
-
+#include <iostream>
 
 
 void Model::Init(int resolutionX, int resolutionY, int resolutionZ, float cellSize, float max_truncation, float min_truncation)

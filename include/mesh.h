@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <vector>
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>

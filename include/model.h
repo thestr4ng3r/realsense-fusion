@@ -1,7 +1,7 @@
 #ifndef _MODEL_H
 #define _MODEL_H
 
-#include <pcl/common/eigen.h>
+#include <Eigen/Core>
 
 #define DEBUG = 0;
 
