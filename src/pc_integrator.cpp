@@ -126,14 +126,14 @@ GLuint PC_Integrator::genComputeProg()
 					else
 					{
 						vec4 color = texelFetch(color_map, pc,0);
-						highp uint weight = uint(color.w * 255.0f); //disgusting
+						highp uint weight = uint(color.w * 255.0f); 
 
 						color_avg = (color * weight + color * add_weight) / (weight + add_weight);
 						weight = min(max_weight, weight + add_weight);
 
 						float w = float(weight) / 255.0f;
 						color = vec4(color.xyz, w);
-						imageStore(color_tex, xyz, color_avg);
+						imageStore(color_tex, xyz, color);
 					}
 				}
 
