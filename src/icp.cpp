@@ -111,14 +111,24 @@ float[RESIDUAL_COMPONENTS] CreateResidual(ivec2 coord)
 	vec3 dir_world = vertex_prev_world - vertex_current_world;
 	float dist_sq = dot(dir_world, dir_world);
 	if(dist_sq > distance_sq_threshold)
+	{
+#ifdef ICP_DEBUG_TEX
+		imageStore(debug_out, coord, vec4(1.0, 0.0, 0.0, 1.0));
+#endif
 		return NopResidual();
+	}
 
 	vec3 normal_prev_world = texture(normal_tex_prev, vertex_current_image_prev).xyz;
 	vec3 normal_current_camera = texelFetch(normal_tex_current, coord, 0).xyz;
 	vec3 normal_current_world = (transform_current * vec4(normal_current_camera, 0.0)).xyz;
 	float angle_cos = dot(normal_current_world, normal_prev_world);
 	if(angle_cos < angle_cos_threshold)
+	{
+#ifdef ICP_DEBUG_TEX
+		imageStore(debug_out, coord, vec4(1.0, 0.0, 1.0, 1.0));
+#endif
 		return NopResidual();
+	}
 
 	// see K. Low. Linear least-squares optimization for point-to-plane ICP surface registration.
 
@@ -127,7 +137,7 @@ float[RESIDUAL_COMPONENTS] CreateResidual(ivec2 coord)
 	vec3 s = vertex_current_world;
 
 #ifdef ICP_DEBUG_TEX
-	imageStore(debug_out, coord, vec4(dir_world * 100.0, 1.0));
+	imageStore(debug_out, coord, vec4(0.0, 1.0, 0.0, 1.0));
 #endif
 
 	return Residual(cross(s, n), n, dot(n, dir_world));
@@ -415,9 +425,11 @@ void ICP::SolveMatrix(CameraTransform *cam_transform)
 	Eigen::Matrix<float, MATRIX_ROWS, 1> result = A.colPivHouseholderQr().solve(b);
 
 	Eigen::Affine3f transform = cam_transform->GetTransform();
-	transform.rotate(Eigen::AngleAxisf(result(0), Eigen::Vector3f::UnitX()));
-	transform.rotate(Eigen::AngleAxisf(result(1), Eigen::Vector3f::UnitY()));
-	transform.rotate(Eigen::AngleAxisf(result(2), Eigen::Vector3f::UnitZ()));
-	transform.translate(result.tail<3>());
+	auto rot_delta =
+			Eigen::AngleAxisf(result(2), Eigen::Vector3f::UnitZ()) *
+			Eigen::AngleAxisf(result(1), Eigen::Vector3f::UnitY()) *
+			Eigen::AngleAxisf(result(0), Eigen::Vector3f::UnitX());
+	transform.translation() = rot_delta * transform.translation() + result.tail<3>();
+	transform.linear() = rot_delta * transform.rotation();
 	cam_transform->SetTransform(transform);
 }
