@@ -438,14 +438,14 @@ Marching_Cubes::~Marching_Cubes()
 		float* tdsf = model->GetData();
 
 		// cell corner values
-		cell.val[0] = tdsf[(x + 1)*dy*dz + y * dz + z];
-		cell.val[1] = tdsf[x*dy*dz + y * dz + z];
-		cell.val[2] = tdsf[x*dy*dz + (y + 1) * dz + z];
-		cell.val[3] = tdsf[(x + 1)*dy*dz + (y + 1) * dz + z];
-		cell.val[4] = tdsf[(x + 1)*dy*dz + y * dz + (z + 1)];
-		cell.val[5] = tdsf[x*dy*dz + y * dz + (z + 1)];
-		cell.val[6] = tdsf[x*dy*dz + (y + 1) * dz + (z + 1)];
-		cell.val[7] = tdsf[(x + 1)*dy*dz + (y + 1) * dz + (z + 1)];
+		cell.val[0] = tdsf[IDX(x+1, y, z)];
+		cell.val[1] = tdsf[IDX(x, y, z)];
+		cell.val[2] = tdsf[IDX(x, y+1, z)];
+		cell.val[3] = tdsf[IDX(x+1, y+1, z)];
+		cell.val[4] = tdsf[IDX(x+1, y, z+1)];
+		cell.val[5] = tdsf[IDX(x, y, z+1)];
+		cell.val[6] = tdsf[IDX(x, y+1, z+1)];
+		cell.val[7] = tdsf[IDX(x+1, y+1, z+1)];
 
 		int face_color[3] = { 0,0,0 };
 
@@ -540,7 +540,7 @@ void Marching_Cubes::process_mc(const std::string &filename)
 	}
 	bool color_active = model->GetColorsActive();
 	// write mesh to file
-	if (!mesh.WriteMesh(filename))
+	if (!mesh.WriteMesh(filename, color_active))
 	{
 		std::cout << "ERROR: unable to write output file!" << std::endl;
 	}
