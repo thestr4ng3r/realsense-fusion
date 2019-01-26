@@ -80,7 +80,7 @@ GLuint PC_Integrator::genComputeProg()
 
 				vec4 v = cam_modelview * v_g;
 
-				ivec2 p = ivec2(ProjectCameraToImage(v.xyz));				
+				ivec2 p = ivec2(ProjectCameraToImage(v.xyz));
 
 				ivec2 depth_res = textureSize(depth_map, 0);
 				if( p.x < 0 || p.x > depth_res.x || p.y < 0 || p.y > depth_res.y || v.z > 0.0 )
@@ -99,6 +99,9 @@ GLuint PC_Integrator::genComputeProg()
 				// float sdf = depth - distance(vec4(cam_pos,1) , v_g);
 
 				float sdf = depth - dot(cam_dir, v_g.xyz - cam_pos);
+
+				if(sdf < min_truncation)
+					continue;
 
 				float tsdf = clamp(sdf, min_truncation, max_truncation);
 				

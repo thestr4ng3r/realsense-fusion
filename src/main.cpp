@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
 
 	Frame frame;
 
-	GLModel gl_model(256, 256, 256, 4.0f / 256.f, 0.3f, -0.3f, true);
+	GLModel gl_model(256, 256, 256, 4.0f / 256.f, 0.3f, -0.1f, true);
 
 	Renderer renderer(&window);
 
