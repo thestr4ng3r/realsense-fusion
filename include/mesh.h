@@ -56,7 +56,7 @@ public:
 		return m_triangles;
 	}
 
-	bool WriteMesh(const std::string& filename)
+	bool WriteMesh(const std::string& filename, bool color_active)
 	{
 		// Write off file
 		std::ofstream outFile(filename);
@@ -72,12 +72,24 @@ public:
 			outFile << m_vertices[i].x() << " " << m_vertices[i].y() << " " << m_vertices[i].z() << std::endl;
 		}
 
-		// save faces
-		for (unsigned int i = 0; i < m_triangles.size(); i++)
+		if (color_active) 
 		{
-			outFile << "3 " << m_triangles[i].idx0 << " " << m_triangles[i].idx1 << " " << m_triangles[i].idx2 <<
-				" " << m_triangles[i].color[0] << " " << m_triangles[i].color[1] << " " << m_triangles[i].color[2] << std::endl;
+			// save faces
+			for (unsigned int i = 0; i < m_triangles.size(); i++)
+			{
+				outFile << "3 " << m_triangles[i].idx0 << " " << m_triangles[i].idx1 << " " << m_triangles[i].idx2 <<
+					" " << m_triangles[i].color[0] << " " << m_triangles[i].color[1] << " " << m_triangles[i].color[2] << std::endl;
+			}
 		}
+		else
+		{
+			// save faces
+			for (unsigned int i = 0; i < m_triangles.size(); i++)
+			{
+				outFile << "3 " << m_triangles[i].idx0 << " " << m_triangles[i].idx1 << " " << m_triangles[i].idx2 << std::endl;
+			}
+		}
+		
 
 		// close file
 		outFile.close();
