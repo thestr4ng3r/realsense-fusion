@@ -94,7 +94,7 @@ CPUModel::CPUModel(int resolutionX, int resolutionY, int resolutionZ, float cell
 CPUModel::~CPUModel()
 {
 	delete [] tsdf;
-	delete [] weigths;
+	delete [] weights;
 	if (colorsActive)
 	{
 		delete[] color;
@@ -107,7 +107,7 @@ void CPUModel::Reset()
 	for (int x = 0; x < resolutionX*resolutionY*resolutionZ; x++)
 	{
 		tsdf[x] = max_truncation;
-		weigths[x] = 0;
+		weights[x] = 0;
 	}
 	if (colorsActive)
 	{
@@ -122,7 +122,7 @@ void CPUModel::Reset()
 void CPUModel::Init()
 {
 	tsdf = new float[resolutionX*resolutionY*resolutionZ];
-	weigths = new uint16_t[resolutionX*resolutionY*resolutionZ];
+	weights = new uint8_t[resolutionX*resolutionY*resolutionZ];
 
 	if (colorsActive)
 	{

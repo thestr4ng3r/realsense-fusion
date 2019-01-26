@@ -5,7 +5,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-#define MAX_WEIGHT 255
+#define MAX_WEIGHT 16
 
 template<class T>
 Eigen::Matrix<T, 4, 4> PerspectiveMatrix(T fovy, T aspect, T near_clip, T far_clip)
@@ -50,7 +50,7 @@ GLuint PC_Integrator::genComputeProg()
 		R"glsl(
 
 		layout(r32f, binding = 0) uniform image3D  tsdf_tex;
-		layout(r16ui, binding = 1) uniform uimage3D  weight_tex;
+		layout(r8ui, binding = 1) uniform uimage3D  weight_tex;
 		layout(rgba8, binding = 2) uniform image3D color_tex;
 		layout(binding = 0) uniform usampler2D depth_map;
 		layout(binding = 1) uniform sampler2D color_map;
@@ -215,7 +215,7 @@ void PC_Integrator::integrate(Frame *frame, CameraTransform *camera_transform)
 	glUniform1ui(max_weight_uniform, MAX_WEIGHT);
 	glUniform1i(activateColors_uniform, this->glModel->GetColorsActive());
 	glBindImageTexture(0, glModel->GetTSDFTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
-	glBindImageTexture(1, glModel->GetWeightTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R16UI);
+	glBindImageTexture(1, glModel->GetWeightTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R8UI);
 	glBindImageTexture(2, glModel->GetColorTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
 	glBindBufferBase(GL_UNIFORM_BUFFER, 0, this->glModel->GetParamsBuffer());
 	glBindBufferBase(GL_UNIFORM_BUFFER, 1, frame->GetCameraIntrinsicsBuffer());
