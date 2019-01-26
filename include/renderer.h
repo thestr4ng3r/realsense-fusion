@@ -24,7 +24,8 @@ class Renderer
 		GLint cam_pos_uniform = -1;
 		GLint tsdf_tex_uniform = -1;
 		GLint color_grid_tex_uniform = -1;
-		GLint activate_colors_uniform = 0;
+		GLint enable_color_uniform = -1;
+		GLint enable_lighting_uniform = -1;
 
 		GLuint box_program = 0;
 		GLint box_mvp_matrix_uniform = -1;
@@ -37,7 +38,8 @@ class Renderer
 		int fbo_width;
 		int fbo_height;
 
-		bool renderColor = false;
+		bool enable_color = false;
+		bool enable_lighting = true;
 
 		Eigen::Matrix4f modelview_matrix;
 		Eigen::Matrix4f projection_matrix;
@@ -45,7 +47,7 @@ class Renderer
 		void InitResources();
 
 	public:
-		explicit Renderer(Window *window, bool renderColor);
+		explicit Renderer(Window *window);
 		~Renderer();
 
 		GLuint GetVertexTex()					{ return vertex_tex; }
@@ -54,6 +56,12 @@ class Renderer
 		Eigen::Matrix4f GetProjectionMatrix()	{ return projection_matrix; }
 
 		void Render(GLModel *model, Frame *frame, CameraTransform *camera_transform);
+
+		bool GetEnableColor()					{ return enable_color; }
+		bool GetEnableLighting()				{ return enable_lighting; }
+
+		void SetEnableColor(bool v)				{ enable_color = v; }
+		void SetEnableLighting(bool v)			{ enable_lighting = v; }
 };
 
 #endif //_RENDERER_H

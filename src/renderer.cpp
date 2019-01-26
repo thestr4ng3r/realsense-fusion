@@ -78,7 +78,8 @@ uniform mat4 modelview_matrix;
 
 uniform vec3 cam_pos;
 
-uniform int activate_colors;
+uniform bool enable_color;
+uniform bool enable_lighting;
 
 in vec3 world_pos;
 in vec3 world_dir;
@@ -132,13 +133,6 @@ float Phong(vec3 normal, vec3 light_dir, float specular, float exponent)
 	return lambert + spec;
 }
 
-vec3 PhongColor(vec3 c,vec3 normal, vec3 light_dir, float specular, float exponent)
-{
-	float lambert = Lambert(normal, light_dir) ;
-	float spec = pow(lambert, exponent) * specular ;
-	return vec3(lambert + spec) * c;
-}
-
 float RayBoxIntersection(vec3 origin, vec3 dir, in vec3 box_min, in vec3 box_max)
 {
 	// see Williams, Amy, et al. "An efficient and robust ray-box intersection algorithm."
@@ -173,14 +167,14 @@ void main()
 		discard;
 	vec3 normal = Normal(world_pos_cur, grid_params.cell_size);
 
-	vec3 l = vec3(0.0, 0.0, 0.0);
-	l += 0.5 * Phong(normal,normalize(vec3(1.0, 1.0, 1.0)), 0.5, 64.0);
-	
-	if(activate_colors!=0)
-	{
-		vec3 color = (texture(color_grid_tex, WorldToGrid(world_pos_cur), 0)).xyz;
-		l = PhongColor(color, normal,normalize(vec3(1.0, 1.0, 1.0)), 0.5, 64.0);
-	}
+	vec3 color = vec3(1.0);
+	if(enable_color)
+		color = (texture(color_grid_tex, WorldToGrid(world_pos_cur), 0)).xyz;
+
+	vec3 l = color;
+	if(enable_lighting)
+		l *= Phong(normal,normalize(vec3(1.0, 1.0, 1.0)), 0.5, 64.0);
+
 	//vec4 screen_coord = mvp_matrix * vec4(world_pos_cur, 1.0);
 	//gl_FragDepth = screen_coord.z / screen_coord.w;
 	color_out = vec4(l, 1.0);
@@ -233,10 +227,9 @@ void main()
 )glsl";
 
 
-Renderer::Renderer(Window *window, bool renderColor)
+Renderer::Renderer(Window *window)
 {
 	this->window = window;
-	this->renderColor = renderColor;
 	InitResources();
 }
 
@@ -337,14 +330,13 @@ void Renderer::InitResources()
 	modelview_matrix_uniform = glGetUniformLocation(program, "modelview_matrix");
 	cam_pos_uniform = glGetUniformLocation(program, "cam_pos");
 	tsdf_tex_uniform = glGetUniformLocation(program, "tsdf_tex");
-	activate_colors_uniform = glGetUniformLocation(program, "activate_colors");
-	if(renderColor)
-		color_grid_tex_uniform = glGetUniformLocation(program, "color_grid_tex");
+	enable_color_uniform = glGetUniformLocation(program, "enable_color");
+	enable_lighting_uniform = glGetUniformLocation(program, "enable_lighting");
+	color_grid_tex_uniform = glGetUniformLocation(program, "color_grid_tex");
 
 	glUseProgram(program);
 	glUniform1i(tsdf_tex_uniform, 0);
-	if (renderColor)
-		glUniform1i(color_grid_tex_uniform, 1);
+	glUniform1i(color_grid_tex_uniform, 1);
 
 	{
 		GLuint vert_shader = glCreateShader(GL_VERTEX_SHADER);
@@ -426,8 +418,6 @@ void Renderer::Render(GLModel *model, Frame *frame, CameraTransform *camera_tran
 {
 	int width = frame->GetDepthWidth();
 	int height = frame->GetDepthHeight();
-
-	renderColor = model->GetColorsActive();
 
 	if(width != fbo_width || height != fbo_height)
 	{
@@ -513,10 +503,11 @@ void Renderer::Render(GLModel *model, Frame *frame, CameraTransform *camera_tran
 	glUniformMatrix4fv(mvp_matrix_uniform, 1, GL_FALSE, mvp_matrix.data());
 	glUniformMatrix4fv(modelview_matrix_uniform, 1, GL_FALSE, modelview_matrix.data());
 	glUniform3fv(cam_pos_uniform, 1, cam_pos.data());
-	glUniform1i(activate_colors_uniform, renderColor);
+	glUniform1i(enable_color_uniform, enable_color);
+	glUniform1i(enable_lighting_uniform, enable_lighting);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D, model->GetTSDFTex());
-	if (renderColor)
+	if (enable_color)
 	{
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_3D, model->GetColorTex());

@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 
 	GLModel gl_model(256, 256, 256, 4.0f / 256.f, 0.3f, -0.3f, true);
 
-	Renderer renderer(&window, true);
+	Renderer renderer(&window);
 
 	CameraTransform camera_transform;
 
@@ -61,6 +61,9 @@ int main(int argc, char *argv[])
 	bool enable_perf_measure = false;
 	bool enable_tracking = true;
 	int icp_passes = 5;
+
+	bool render_color = false;
+	bool render_lighting = true;
 
 	bool show_tex_input_normal = false;
 #ifdef ICP_DEBUG_TEX
@@ -133,6 +136,8 @@ int main(int argc, char *argv[])
 		MeasureTime(time_integrate);
 
 		window.BeginRender();
+		renderer.SetEnableColor(render_color);
+		renderer.SetEnableLighting(render_lighting);
 		renderer.Render(&gl_model, &frame, &camera_transform);
 
 		MeasureTime(time_render);
@@ -175,6 +180,13 @@ int main(int argc, char *argv[])
 			v = icp.GetAngleThreshold();
 			ImGui::SliderFloat("Angle Threshold", &v, -1.0f, 1.0f, "%.3f");
 			icp.SetAngleThreshold(v);
+			ImGui::TreePop();
+		}
+
+		if(ImGui::TreeNode("Rendering"))
+		{
+			ImGui::Checkbox("Enable Color", &render_color);
+			ImGui::Checkbox("Enable Lighting", &render_lighting);
 			ImGui::TreePop();
 		}
 
