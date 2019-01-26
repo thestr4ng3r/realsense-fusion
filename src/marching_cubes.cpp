@@ -540,7 +540,7 @@ void Marching_Cubes::process_mc(const std::string &filename)
 	}
 	bool color_active = model->GetColorsActive();
 	// write mesh to file
-	if (!mesh.WriteMesh(filename, color_active))
+	if (!mesh.WriteMesh(filename))
 	{
 		std::cout << "ERROR: unable to write output file!" << std::endl;
 	}

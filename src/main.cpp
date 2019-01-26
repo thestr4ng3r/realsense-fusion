@@ -44,14 +44,14 @@ int main(int argc, char *argv[])
 
 	Frame frame;
 
-	GLModel gl_model(256, 256, 256, 2.0f / 256.f, 0.3f, -0.3f, true);
+	GLModel gl_model(256, 256, 256, 4.0f / 256.f, 0.3f, -0.3f, true);
 
 	Renderer renderer(&window, true);
 
 	CameraTransform camera_transform;
 
 	Eigen::Affine3f reset_transform = Eigen::Affine3f::Identity();
-	reset_transform.translate(Eigen::Vector3f(0.0f, 0.0f, 0.7f));
+	reset_transform.translate(Eigen::Vector3f(0.0f, 0.0f, 0.0f));
 	camera_transform.SetTransform(reset_transform);
 
 	ICP icp;
@@ -61,6 +61,13 @@ int main(int argc, char *argv[])
 	bool enable_perf_measure = false;
 	bool enable_tracking = true;
 	int icp_passes = 5;
+
+	bool show_tex_input_normal = false;
+#ifdef ICP_DEBUG_TEX
+	bool show_tex_icp_debug = false;
+#endif
+	bool show_tex_renderer_vertex = false;
+	bool show_tex_renderer_normal = false;
 
 	using clock = std::chrono::steady_clock;
 	using time_point = std::chrono::time_point<clock>;
@@ -198,13 +205,38 @@ int main(int argc, char *argv[])
 			ImGui::TreePop();
 		}
 
+		if(ImGui::TreeNode("Debug Textures"))
+		{
+			ImGui::Checkbox("Input Normal", &show_tex_input_normal);
+#ifdef ICP_DEBUG_TEX
+			ImGui::Checkbox("ICP Debug", &show_tex_icp_debug);
+#endif
+			ImGui::Checkbox("Renderer Vertex", &show_tex_renderer_vertex);
+			ImGui::Checkbox("Renderer Normal", &show_tex_renderer_normal);
+			ImGui::TreePop();
+		}
+
 		ImGui::End();
 
+		auto ShowTexture = [&frame](const char *title, GLuint tex, bool flip = false)
+		{
+			ImVec2 tex_size(frame.GetDepthWidth(), frame.GetDepthHeight());
+			ImGui::Begin(title, nullptr, ImVec2(tex_size.x * 0.3f, tex_size.y * 0.3f), 1.0f);
+			ImGui::Image(reinterpret_cast<ImTextureID>(tex), ImGui::GetContentRegionAvail(),
+					ImVec2(0.0f, flip ? 1.f : 0.0f), ImVec2(1.0f, flip ? 0.0f : 1.0f), ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
+			ImGui::End();
+		};
+
+		if(show_tex_input_normal)
+			ShowTexture("Input Normal", frame.GetNormalTex());
 #ifdef ICP_DEBUG_TEX
-		ImGui::Begin("ICP Debug");
-		ImGui::Image(reinterpret_cast<ImTextureID>(icp.GetDebugTex()), ImVec2((float)icp.GetDebugTexWidth() * 0.3f, (float)icp.GetDebugTexHeight() * 0.3f));
-		ImGui::End();
+		if(show_tex_icp_debug)
+			ShowTexture("ICP Debug", icp.GetDebugTex());
 #endif
+		if(show_tex_renderer_vertex)
+			ShowTexture("Renderer Vertex", renderer.GetVertexTex(), true);
+		if(show_tex_renderer_normal)
+			ShowTexture("Renderer Normal", renderer.GetNormalTex(), true);
 
 		window.EndGUI();
 

@@ -45,7 +45,23 @@ void main()
 		else
 			dy -= pos;
 
-		normal = normalize(cross(dx, dy));
+		normal = cross(dx, dy);
+
+		dx = VertexForCoords(coords - ivec2(1, 0), depth);
+		if(depth == 0.0)
+			dx = vec3(-1.0, 0.0, 0.0);
+		else
+			dx = pos - dx;
+
+		dy = VertexForCoords(coords - ivec2(0, -1), depth);
+		if(depth == 0.0)
+			dy = vec3(0.0, -1.0, 0.0);
+		else
+			dy = pos - dy;
+
+		normal += cross(dx, dy);
+
+		normal = normalize(normal);
 	}
 	else
 	{
@@ -53,8 +69,8 @@ void main()
 		normal = vec3(1.0 / 0.0);
 	}
 
-	imageStore(vertex_out, coords, vec4(pos, 0.0));
-	imageStore(normal_out, coords, vec4(normal, 0.0));
+	imageStore(vertex_out, coords, vec4(pos, 1.0));
+	imageStore(normal_out, coords, vec4(normal, 1.0));
 }
 )glsl";
 

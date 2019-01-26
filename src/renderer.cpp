@@ -171,7 +171,7 @@ void main()
 
 	if(!TraceRay(world_pos_cur, world_dir))
 		discard;
-	vec3 normal = Normal(world_pos_cur, 0.001);
+	vec3 normal = Normal(world_pos_cur, grid_params.cell_size);
 
 	vec3 l = vec3(0.0, 0.0, 0.0);
 	l += 0.5 * Phong(normal,normalize(vec3(1.0, 1.0, 1.0)), 0.5, 64.0);
@@ -438,7 +438,7 @@ void Renderer::Render(GLModel *model, Frame *frame, CameraTransform *camera_tran
 		glBindTexture(GL_TEXTURE_2D, vertex_tex);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
 		glBindTexture(GL_TEXTURE_2D, normal_tex);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, nullptr);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_FLOAT, nullptr);
 		glBindTexture(GL_TEXTURE_2D, depth_tex);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
 	}
