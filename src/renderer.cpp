@@ -81,6 +81,8 @@ uniform vec3 cam_pos;
 uniform bool enable_color;
 uniform bool enable_lighting;
 
+uniform vec3 drift_correction;
+
 in vec3 world_pos;
 in vec3 world_dir;
 
@@ -90,7 +92,7 @@ layout(location = 2) out vec3 normal_out;
 
 float SDF(vec3 grid_pos)
 {
-	return texture(tsdf_tex, grid_pos).x;
+	return texture(tsdf_tex, grid_pos + drift_correction).x;
 }
 
 vec3 Normal(vec3 world_pos, float epsilon)
@@ -333,6 +335,7 @@ void Renderer::InitResources()
 	enable_color_uniform = glGetUniformLocation(program, "enable_color");
 	enable_lighting_uniform = glGetUniformLocation(program, "enable_lighting");
 	color_grid_tex_uniform = glGetUniformLocation(program, "color_grid_tex");
+	drift_correction_uniform = glGetUniformLocation(program, "drift_correction");
 
 	glUseProgram(program);
 	glUniform1i(tsdf_tex_uniform, 0);
@@ -412,6 +415,8 @@ void Renderer::InitResources()
 	glObjectLabel(GL_TEXTURE, depth_tex, -1, "Renderer::depth_tex");
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	drift_correction = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
 }
 
 void Renderer::Render(GLModel *model, Frame *frame, CameraTransform *camera_transform)
@@ -505,6 +510,10 @@ void Renderer::Render(GLModel *model, Frame *frame, CameraTransform *camera_tran
 	glUniform3fv(cam_pos_uniform, 1, cam_pos.data());
 	glUniform1i(enable_color_uniform, enable_color);
 	glUniform1i(enable_lighting_uniform, enable_lighting);
+
+	Eigen::Vector3f drift_correction_val = drift_correction.cwiseQuotient(Eigen::Vector3f(model->GetResolutionX(), model->GetResolutionY(), model->GetResolutionZ()));
+	glUniform3f(drift_correction_uniform, drift_correction_val.x(), drift_correction_val.y(), drift_correction_val.z());
+
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_3D, model->GetTSDFTex());
 	if (enable_color)

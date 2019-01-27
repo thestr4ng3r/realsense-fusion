@@ -320,6 +320,9 @@ ICP::ICP()
 	distance_threshold = 0.1f;
 	angle_threshold = 0.5f;
 
+	last_rot_delta = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
+	last_translation_delta = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
+
 #ifdef ICP_DEBUG_TEX
 	glGenTextures(1, &debug_tex);
 	glBindTexture(GL_TEXTURE_2D, debug_tex);
@@ -423,6 +426,9 @@ void ICP::SolveMatrix(CameraTransform *cam_transform)
 		return;
 
 	Eigen::Matrix<float, MATRIX_ROWS, 1> result = A.colPivHouseholderQr().solve(b);
+
+	last_rot_delta = result.head<3>();
+	last_translation_delta = result.tail<3>();
 
 	Eigen::Affine3f transform = cam_transform->GetTransform();
 	auto rot_delta =

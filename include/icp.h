@@ -4,6 +4,8 @@
 
 #include "window.h"
 
+#include <Eigen/Core>
+
 class Frame;
 class CameraTransform;
 class Renderer;
@@ -32,6 +34,9 @@ class ICP
 		float distance_threshold;
 		float angle_threshold;
 
+		Eigen::Vector3f last_rot_delta;
+		Eigen::Vector3f last_translation_delta;
+
 #ifdef ICP_DEBUG_TEX
 		GLuint debug_tex;
 		int debug_tex_width;
@@ -50,6 +55,9 @@ class ICP
 
 		void SetDistanceThreshold(float v)	{ distance_threshold = v; }
 		void SetAngleThreshold(float v)		{ angle_threshold = v; }
+
+		Eigen::Vector3f GetLastRotDelta()	{ return last_rot_delta; }
+		Eigen::Vector3f GetLastTranslationDelta() { return last_translation_delta; }
 
 #ifdef ICP_DEBUG_TEX
 		GLuint GetDebugTex()				{ return debug_tex; }

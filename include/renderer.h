@@ -26,6 +26,7 @@ class Renderer
 		GLint color_grid_tex_uniform = -1;
 		GLint enable_color_uniform = -1;
 		GLint enable_lighting_uniform = -1;
+		GLint drift_correction_uniform = -1;
 
 		GLuint box_program = 0;
 		GLint box_mvp_matrix_uniform = -1;
@@ -44,24 +45,29 @@ class Renderer
 		Eigen::Matrix4f modelview_matrix;
 		Eigen::Matrix4f projection_matrix;
 
+		Eigen::Vector3f drift_correction;
+
 		void InitResources();
 
 	public:
 		explicit Renderer(Window *window);
 		~Renderer();
 
-		GLuint GetVertexTex()					{ return vertex_tex; }
-		GLuint GetNormalTex()					{ return normal_tex; }
-		Eigen::Matrix4f GetModelviewMatrix()	{ return modelview_matrix; }
-		Eigen::Matrix4f GetProjectionMatrix()	{ return projection_matrix; }
+		GLuint GetVertexTex()						{ return vertex_tex; }
+		GLuint GetNormalTex()						{ return normal_tex; }
+		Eigen::Matrix4f GetModelviewMatrix()		{ return modelview_matrix; }
+		Eigen::Matrix4f GetProjectionMatrix()		{ return projection_matrix; }
 
 		void Render(GLModel *model, Frame *frame, CameraTransform *camera_transform);
 
-		bool GetEnableColor()					{ return enable_color; }
-		bool GetEnableLighting()				{ return enable_lighting; }
+		bool GetEnableColor()						{ return enable_color; }
+		bool GetEnableLighting()					{ return enable_lighting; }
 
-		void SetEnableColor(bool v)				{ enable_color = v; }
-		void SetEnableLighting(bool v)			{ enable_lighting = v; }
+		void SetEnableColor(bool v)					{ enable_color = v; }
+		void SetEnableLighting(bool v)				{ enable_lighting = v; }
+
+		Eigen::Vector3f GetDriftCorrection()		{ return drift_correction; }
+		void SetDriftCorrection(Eigen::Vector3f v)	{ drift_correction = v; }
 };
 
 #endif //_RENDERER_H

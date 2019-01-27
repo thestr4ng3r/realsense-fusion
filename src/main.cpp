@@ -44,14 +44,17 @@ int main(int argc, char *argv[])
 
 	Frame frame;
 
-	GLModel gl_model(256, 256, 256, 4.0f / 256.f, 0.3f, -0.1f, true);
+#define RES 256
+	GLModel gl_model(RES, RES, RES, 4.0f / RES, 0.3f, -0.1f, true);
+#undef RES
 
 	Renderer renderer(&window);
+	renderer.SetDriftCorrection(Eigen::Vector3f(0.5f, 0.43f, 0.17f));
 
 	CameraTransform camera_transform;
 
 	Eigen::Affine3f reset_transform = Eigen::Affine3f::Identity();
-	reset_transform.translate(Eigen::Vector3f(0.0f, 0.0f, 0.0f));
+	reset_transform.translate(Eigen::Vector3f(0.0f, 0.0f, 1.0f));
 	camera_transform.SetTransform(reset_transform);
 
 	ICP icp;
@@ -87,7 +90,6 @@ int main(int argc, char *argv[])
 		glFinish();
 		tp = clock::now();
 	};
-
 
 	while(!window.GetShouldTerminate())
 	{
@@ -180,6 +182,17 @@ int main(int argc, char *argv[])
 			v = icp.GetAngleThreshold();
 			ImGui::SliderFloat("Angle Threshold", &v, -1.0f, 1.0f, "%.3f");
 			icp.SetAngleThreshold(v);
+			Eigen::Vector3f drift_corr = renderer.GetDriftCorrection();
+			ImGui::SliderFloat("Drift Correction X", &drift_corr.x(), -1.0f, 1.0f);
+			ImGui::SliderFloat("Drift Correction Y", &drift_corr.y(), -1.0f, 1.0f);
+			ImGui::SliderFloat("Drift Correction Z", &drift_corr.z(), -1.0f, 1.0f);
+			renderer.SetDriftCorrection(drift_corr);
+			ImGui::Text("Rotation (delta):");
+			ImGui::SameLine(200.0f);
+			ImGui::Text("%11.8f, %11.8f, %11.8f", icp.GetLastRotDelta().x(), icp.GetLastRotDelta().y(), icp.GetLastRotDelta().z());
+			ImGui::Text("Translation (delta):");
+			ImGui::SameLine(200.0f);
+			ImGui::Text("%11.8f, %11.8f, %11.8f", icp.GetLastTranslationDelta().x(), icp.GetLastTranslationDelta().y(), icp.GetLastTranslationDelta().z());
 			ImGui::TreePop();
 		}
 
