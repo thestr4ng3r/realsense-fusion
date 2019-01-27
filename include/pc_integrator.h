@@ -35,6 +35,7 @@ class PC_Integrator
 		int resolutionY;
 		int resolutionZ;
 		float cellSize;
+		unsigned int max_weight;
 
 		GLuint genComputeProg();
 		GLuint genTexture2D(int resolutionX, int resolutionY, float* data);
@@ -44,6 +45,9 @@ class PC_Integrator
 		~PC_Integrator();
 		
 		void integrate(Frame* frame, CameraTransform *camera_transform);
+
+		unsigned int GetMaxWeight()			{ return max_weight; }
+		void SetMaxWeight(unsigned int v)	{ max_weight = v; }
 };
 
 #endif //_PC_INTEGRATOR_H

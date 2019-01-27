@@ -196,6 +196,14 @@ int main(int argc, char *argv[])
 			ImGui::TreePop();
 		}
 
+		if(ImGui::TreeNode("Integration"))
+		{
+			int max_weight = integrator.GetMaxWeight();
+			ImGui::SliderInt("Max Weight", &max_weight, 0, 255);
+			integrator.SetMaxWeight((unsigned int)max_weight);
+			ImGui::TreePop();
+		}
+
 		if(ImGui::TreeNode("Rendering"))
 		{
 			ImGui::Checkbox("Enable Color", &render_color);

@@ -5,8 +5,6 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 
-#define MAX_WEIGHT 255
-
 template<class T>
 Eigen::Matrix<T, 4, 4> PerspectiveMatrix(T fovy, T aspect, T near_clip, T far_clip)
 {
@@ -29,6 +27,8 @@ PC_Integrator::PC_Integrator(GLModel* glModel)
 	this->resolutionX = glModel->GetResolutionX();
 	this->resolutionY = glModel->GetResolutionY();
 	this->resolutionZ = glModel->GetResolutionZ();
+
+	max_weight = 255;
 
 	this->computeHandle = genComputeProg();
 }
@@ -215,7 +215,7 @@ void PC_Integrator::integrate(Frame *frame, CameraTransform *camera_transform)
 	glUniform1f(depth_scale_uniform, frame->GetDepthScale());
 	glUniform1f(max_truncation_uniform, glModel->GetMaxTruncation());
 	glUniform1f(min_truncation_uniform, glModel->GetMinTruncation());
-	glUniform1ui(max_weight_uniform, MAX_WEIGHT);
+	glUniform1ui(max_weight_uniform, max_weight);
 	glUniform1i(activateColors_uniform, this->glModel->GetColorsActive());
 	glBindImageTexture(0, glModel->GetTSDFTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32F);
 	glBindImageTexture(1, glModel->GetWeightTex(), 0, GL_TRUE, 0, GL_READ_WRITE, GL_R8UI);
