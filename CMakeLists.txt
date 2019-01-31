@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.2)
 option(BUILD_INPUT_REALSENSE "Build with RealSense support" ON)
 option(BUILD_INPUT_KINECT "Build with Kinect support" OFF)
 
+option(BUILD_TESTS "Build test executables" OFF)
+
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 message("CMAKE_TOOLCHAIN_FILE: \"${CMAKE_TOOLCHAIN_FILE}\"")
@@ -75,24 +77,27 @@ include_directories("${CMAKE_CURRENT_SOURCE_DIR}/third-party/imgui")
 add_executable(scanner ${SOURCE_FILES} ${HEADER_FILES} ${SOURCE_FILE_MAIN} ${IMGUI_SOURCE_FILES})
 target_link_libraries(scanner ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} glfw Eigen3::Eigen)
 
-#Test Executables
-add_executable(modeltest ${MODEL_TEST_FILES})
-target_link_libraries(modeltest Eigen3::Eigen)
+if(BUILD_TESTS)
+	add_executable(modeltest ${MODEL_TEST_FILES})
+	target_link_libraries(modeltest Eigen3::Eigen)
 
-add_executable(integrationtest ${SOURCE_FILES} ${HEADER_FILES} tests/integrationtest.cpp ${IMGUI_SOURCE_FILES})
-target_link_libraries(integrationtest ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} glfw Eigen3::Eigen)
+	add_executable(integrationtest ${SOURCE_FILES} ${HEADER_FILES} tests/integrationtest.cpp ${IMGUI_SOURCE_FILES})
+	target_link_libraries(integrationtest ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} glfw Eigen3::Eigen)
 
-add_executable(marchingcubestest ${SOURCE_FILES} ${HEADER_FILES} tests/marchingcubestest.cpp ${IMGUI_SOURCE_FILES})
-target_link_libraries(marchingcubestest ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} glfw Eigen3::Eigen)
+	add_executable(marchingcubestest ${SOURCE_FILES} ${HEADER_FILES} tests/marchingcubestest.cpp ${IMGUI_SOURCE_FILES})
+	target_link_libraries(marchingcubestest ${OPENGL_LIBRARIES} ${GLEW_LIBRARIES} glfw Eigen3::Eigen)
+endif()
 
 
 
 if(BUILD_INPUT_REALSENSE)
 	target_link_libraries(scanner "${realsense2_LIBRARY}")
-	#target_link_libraries(modeltest "${realsense2_LIBRARY}")
-	#target_link_libraries(renderertest "${realsense2_LIBRARY}")
-	target_link_libraries(integrationtest "${realsense2_LIBRARY}")
-	target_link_libraries(marchingcubestest "${realsense2_LIBRARY}")
+	if(BUILD_TESTS)
+		#target_link_libraries(modeltest "${realsense2_LIBRARY}")
+		target_link_libraries(renderertest "${realsense2_LIBRARY}")
+		target_link_libraries(integrationtest "${realsense2_LIBRARY}")
+		target_link_libraries(marchingcubestest "${realsense2_LIBRARY}")
+	endif()
 	if(realsense2_DLL)
 		message(STATUS "Adding Post build script to copy realsense2.dll to project's binary folder")
 		message(STATUS "Will try to copy ${realsense2_DLL} to ${CMAKE_CURRENT_BINARY_DIR}")
